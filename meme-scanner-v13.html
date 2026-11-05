@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-mono="off">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solana Meme Scanner</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#262b36;--text:#e8ebf1;--muted:#8a93a6;--good:#2fbf71;--warn:#e0a526;--bad:#e5484d;--acc:#7c8cff;--input:#0f1115;--ink:#0f1115;--shade:rgba(0,0,0,.6)}
+:root[data-theme="light"]{--bg:#f5f6fa;--card:#ffffff;--line:#dfe3ea;--text:#1b1f2a;--muted:#5f6b7d;--good:#128a4d;--warn:#a86b00;--bad:#c4262c;--acc:#3f51d6;--input:#ffffff;--shade:rgba(20,24,34,.45)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:20px 16px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:20px;margin:0;background:linear-gradient(90deg,#ff4fa3,#ff8a3d,#ffd23f,#2fe6a6,#3fd6ff,#a66bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+h3{font-size:14px;margin:0}
+main{padding:16px;display:grid;gap:20px;max-width:1800px;margin:0 auto}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.sec-head{padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+.sec-head h2{font-size:16px;margin:0}
+.sec-head p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.sec-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+button.toggle{font-size:13px;padding:6px 12px}
+button.toggle .cnt{color:var(--muted);font-weight:500}
+form.filters{padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;border-bottom:1px solid var(--line);background:rgba(127,127,127,.04)}
+form.filters.collapsed{display:none}
+form.filters>label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px;min-width:150px}
+.pair{display:flex;gap:6px}
+.pair input{width:100%;min-width:0;flex:1}
+input,select,button{font:inherit;color:var(--text);background:var(--input);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+input:focus,select:focus{outline:2px solid var(--acc);outline-offset:0}
+button{cursor:pointer;background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+button.ghost{background:transparent;color:var(--text);border-color:var(--line)}
+button.copy{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:500;padding:2px 7px;margin-top:4px;background:transparent;color:var(--acc);border:1px solid var(--line)}
+button.copy:hover{border-color:var(--acc)}
+.preset-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;width:100%;padding-top:8px;border-top:1px dashed var(--line)}
+.preset-bar label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px;min-width:180px}
+.meta{padding:8px 16px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* Layout: three lanes side by side on very wide screens, stacked otherwise.
+   In columns mode each lane scrolls sideways, so no token info is cut off. */
+.lanes{display:grid;gap:16px;grid-template-columns:1fr;align-items:start}
+.lanes.columns{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lanes.columns .wrap{max-height:64vh}
+.lanes.columns table{min-width:1040px}
+.lanes.columns .meta{flex-direction:column}
+
+/* Live ticker of the biggest 5m movers */
+.ticker{overflow:hidden;border-bottom:1px solid var(--line);background:rgba(127,127,127,.05);padding:8px 0}
+.track{display:inline-flex;gap:28px;padding-left:16px;animation:scroll 45s linear infinite;white-space:nowrap;font-size:13px}
+.ticker:hover .track{animation-play-state:paused}
+.tick-item{display:inline-flex;gap:6px;align-items:center}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* Live dot: pulses while the page is updating, turns red on error */
+.live{width:9px;height:9px;border-radius:50%;background:var(--good);display:inline-block;margin-right:6px;animation:pulse 1.6s infinite}
+.live.err{background:var(--bad);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,191,113,.6)}70%{box-shadow:0 0 0 8px rgba(47,191,113,0)}100%{box-shadow:0 0 0 0 rgba(47,191,113,0)}}
+
+/* Hot & picks cards */
+.sub{padding:12px 16px 0;display:flex;flex-direction:column;gap:2px}
+.sub p{margin:0;color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding:12px 16px 16px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card);animation:rise .45s ease both;display:flex;flex-direction:column;gap:8px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card ul{margin:0;padding-left:16px;color:var(--muted);font-size:12px}
+.card-stats{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--muted)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap}
+.score{background:linear-gradient(90deg,#ff4fa3,#ffd23f,#2fe6a6)}
+
+/* Clickable token names open the detail panel */
+[data-open]{cursor:pointer}
+.tlink{color:var(--text);text-decoration:none;border-bottom:1px dashed var(--muted)}
+.tlink:hover{color:var(--acc);border-bottom-color:var(--acc)}
+.tok[data-open]:hover b{color:var(--acc)}
+
+/* Scrollable table: header row and token column stay visible while scrolling */
+.wrap{overflow:auto;max-height:70vh}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:1040px}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--card)}
+thead th{position:sticky;top:0;z-index:2;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;z-index:1}
+thead th:first-child{z-index:3}
+td:last-child,th:last-child{text-align:center}
+th.hl{color:var(--text);box-shadow:inset 0 -3px 0 #ffd23f}
+
+/* Price flash when a token's price moved since the last refresh */
+tr.flash-up td{animation:fUp 1.4s ease-out}
+tr.flash-dn td{animation:fDn 1.4s ease-out}
+@keyframes fUp{from{background:rgba(47,230,166,.28)}to{background:var(--card)}}
+@keyframes fDn{from{background:rgba(255,79,163,.28)}to{background:var(--card)}}
+
+/* Radiant chips */
+.mc1{background:linear-gradient(90deg,#9fb3c8,#c7d3e0)}
+.mc2{background:linear-gradient(90deg,#3fd6ff,#7ae7ff)}
+.mc3{background:linear-gradient(90deg,#a66bff,#d08cff)}
+.mc4{background:linear-gradient(90deg,#ffd23f,#ff8a3d)}
+.age1{background:linear-gradient(90deg,#ff4fa3,#ff7ac0)}
+.age2{background:linear-gradient(90deg,#ff8a3d,#ffb36b)}
+.age3{background:linear-gradient(90deg,#ffd23f,#fff07a)}
+.age4{background:linear-gradient(90deg,#3fd6ff,#2fe6a6)}
+.vt0{background:transparent;color:var(--muted);font-weight:500}
+.vt1{background:linear-gradient(90deg,#3fd6ff,#7ae7ff)}
+.vt2{background:linear-gradient(90deg,#2fe6a6,#a8f5d0)}
+.vt3{background:linear-gradient(90deg,#ffd23f,#ff8a3d)}
+.vt4{background:linear-gradient(90deg,#ff4fa3,#ff8a3d)}
+.pz0{background:transparent;color:var(--good);font-weight:500}
+.pz1{background:linear-gradient(90deg,#2fe6a6,#7ae7ff)}
+.pz2{background:linear-gradient(90deg,#2fe6a6,#ffd23f)}
+.nz0{background:transparent;color:var(--bad);font-weight:500}
+.nz1{background:linear-gradient(90deg,#ff8a3d,#ff4fa3)}
+.nz2{background:linear-gradient(90deg,#ff4fa3,#a66bff)}
+.up{color:var(--good)}
+.dn{color:var(--bad)}
+
+/* Black & white mode: the whole page goes grayscale */
+html[data-mono="on"] table,html[data-mono="on"] .grid,html[data-mono="on"] .detail{filter:grayscale(1)}
+html[data-mono="on"] h1{background:none;-webkit-text-fill-color:var(--text);color:var(--text)}
+html[data-mono="on"] .bar i{background:var(--text)}
+html[data-mono="on"] .track{filter:grayscale(1)}
+
+.tok{display:flex;gap:10px;align-items:center}
+.tok img,.ph{width:28px;height:28px;border-radius:50%;background:var(--line);flex:none;object-fit:cover}
+.tok small{display:block;color:var(--muted);font-size:11px}
+.socials{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.soc{font-size:10px;font-weight:600;padding:1px 6px;border:1px solid var(--line);border-radius:6px;color:var(--acc);text-decoration:none}
+.soc:hover{border-color:var(--acc)}
+.risk{padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600}
+.risk.good{background:rgba(47,191,113,.15);color:var(--good)}
+.risk.warn{background:rgba(224,165,38,.15);color:var(--warn)}
+.risk.bad{background:rgba(229,72,77,.15);color:var(--bad)}
+a{color:var(--acc)}
+.empty{text-align:center;color:var(--muted);padding:24px}
+.status{color:var(--muted);font-size:12px}
+.status.err{color:var(--bad)}
+.countdown{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.countdown b{color:var(--text);font-variant-numeric:tabular-nums;min-width:3ch;display:inline-block}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select#chain-select{padding:6px 8px}
+.bar{height:4px;width:160px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff4fa3,#ffd23f,#2fe6a6,#3fd6ff)}
+footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;margin:0 auto}
+
+/* Token detail panel */
+.detail{position:fixed;inset:0;background:var(--shade);display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow:auto;z-index:50}
+.detail[hidden]{display:none}
+.dpanel{background:var(--card);border:1px solid var(--line);border-radius:14px;width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:14px}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.dhead h2{margin:0;font-size:20px}
+.dhead small{color:var(--muted)}
+.dclose{font-size:18px;line-height:1;padding:6px 12px}
+.dchart{width:100%;height:420px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.dnote{color:var(--muted);font-size:12px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.dstat{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.dstat small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.dstat b{font-size:15px;font-variant-numeric:tabular-nums}
+.dtable{overflow-x:auto}
+.dtable table{min-width:620px}
+.dtable th,.dtable td{padding:8px 10px;background:var(--card)}
+.bsbar{height:8px;border-radius:6px;background:var(--line);overflow:hidden;min-width:120px}
+.bsbar i{display:block;height:100%;background:linear-gradient(90deg,#2fe6a6,#7ae7ff)}
+.bsbar.sell i{background:linear-gradient(90deg,#ff4fa3,#ff8a3d)}
+.dsec{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+@media (prefers-reduced-motion: reduce){
+  .track,.live,.card,tr.flash-up td,tr.flash-dn td{animation:none !important}
+}
+@media (max-width:600px){
+  main{padding:10px;gap:14px}
+  header{padding:14px 12px}
+  form.filters{padding:10px 12px;gap:8px}
+  form.filters>label{min-width:46%;flex:1 1 46%}
+  form.filters>label:first-child{flex-basis:100%}
+  form.filters input,form.filters select{font-size:13px;padding:6px 7px}
+  .preset-bar label{min-width:100%}
+  .bar{width:100px}
+  .countdown{width:100%}
+  .grid{grid-template-columns:1fr}
+  .dchart{height:300px}
+  .detail{padding:8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Solana Meme Scanner</h1>
+    <div class="status"><span class="live" id="live-dot" title="Live"></span><span id="global-status">Starting…</span></div>
+  </div>
+  <div class="countdown">
+    <span>Next refresh in <b id="countdown">–</b></span>
+    <div class="bar"><i id="cd-bar"></i></div>
+    <div class="controls">
+      <select id="chain-select" aria-label="Blockchain" title="Blockchain"></select>
+      <button class="ghost" id="layout-toggle" title="Switch between side-by-side columns and stacked rows" aria-label="Switch layout">▥</button>
+      <button class="ghost" id="refresh-all">Refresh now</button>
+      <button class="ghost" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch theme">☀️</button>
+      <button class="ghost" id="mono-toggle" title="Switch black & white mode" aria-label="Switch black and white">◐</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker" aria-label="Biggest 5-minute movers">
+  <div class="track" id="ticker-track"><span class="tick-item">Loading movers…</span></div>
+</div>
+
+<main>
+  <section id="sec-picks">
+    <div class="sec-head">
+      <div>
+        <h2>Hot &amp; picks</h2>
+        <p>Ranked by the rules below, not by any prediction. Not investment advice.</p>
+      </div>
+    </div>
+    <div class="sub">
+      <h3>🔥 Hot now</h3>
+      <p>Liquidity ≥ $10k. Scored on 5m and 30m gains, a 5m volume spike, and buy pressure over the last hour, minus 10 points per risk flag.</p>
+    </div>
+    <div class="grid" id="hot-grid"></div>
+    <div class="sub">
+      <h3>⭐ Top picks</h3>
+      <p>Liquidity ≥ $25k, no risk flags, and not falling over the last 5 minutes. Same scoring.</p>
+    </div>
+    <div class="grid" id="pick-grid"></div>
+  </section>
+
+  <div class="lanes" id="lanes">
+
+    <section id="sec-launch">
+      <div class="sec-head">
+        <div><h2>New pairs</h2><p>Recently profiled tokens, filtered by age and early activity.</p></div>
+        <div class="sec-tools">
+          <button type="button" class="ghost toggle" data-target="f-launch" aria-expanded="true">Filters <span class="chev">▴</span> <span class="cnt"></span></button>
+          <div class="status" id="st-launch"></div>
+        </div>
+      </div>
+      <form class="filters" id="f-launch" autocomplete="off"></form>
+      <div class="meta"><span id="c-launch"></span><span id="cd-launch"></span></div>
+      <div class="wrap"><table>
+        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th>5m vol</th><th>1h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Chart</th></tr></thead>
+        <tbody id="b-launch"></tbody>
+      </table></div>
+    </section>
+
+    <section id="sec-grad">
+      <div class="sec-head">
+        <div><h2>Graduated</h2><p>Tokens on a DEX with at least $20k liquidity (approximate, see footer).</p></div>
+        <div class="sec-tools">
+          <button type="button" class="ghost toggle" data-target="f-grad" aria-expanded="true">Filters <span class="chev">▴</span> <span class="cnt"></span></button>
+          <div class="status" id="st-grad"></div>
+        </div>
+      </div>
+      <form class="filters" id="f-grad" autocomplete="off"></form>
+      <div class="meta"><span id="c-grad"></span><span id="cd-grad"></span></div>
+      <div class="wrap"><table>
+        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th>5m vol</th><th>1h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Chart</th></tr></thead>
+        <tbody id="b-grad"></tbody>
+      </table></div>
+    </section>
+
+    <section id="sec-trend">
+      <div class="sec-head">
+        <div><h2>Trending</h2><p>Top boosted tokens, filtered by momentum and size.</p></div>
+        <div class="sec-tools">
+          <button type="button" class="ghost toggle" data-target="f-trend" aria-expanded="true">Filters <span class="chev">▴</span> <span class="cnt"></span></button>
+          <div class="status" id="st-trend"></div>
+        </div>
+      </div>
+      <form class="filters" id="f-trend" autocomplete="off"></form>
+      <div class="meta"><span id="c-trend"></span><span id="cd-trend"></span></div>
+      <div class="wrap"><table>
+        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th>5m vol</th><th>24h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Chart</th></tr></thead>
+        <tbody id="b-trend"></tbody>
+      </table></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- Token detail panel: opens when a token name is clicked -->
+<div class="detail" id="detail" hidden role="dialog" aria-modal="true" aria-labelledby="d-title">
+  <div class="dpanel" id="detail-body"></div>
+</div>
+
+<footer>
+  Data from DexScreener public endpoints. Website and social links come from each token's DexScreener profile, which the token's creator submits, so they are not verified. 5m and 1h changes come from DexScreener. 30m change is calculated from this page's own snapshots, so it shows "–" until about 30 minutes after the page opens. DexScreener does not provide 30m volume. Buy and sell counts are per time window and refresh with the page every 50 seconds; they are not a live trade-by-trade feed. The chart in the detail panel is DexScreener's embedded chart; if it stays blank, use the Chart link. Graduated is an approximation: it lists tokens on the DEX pools named in GRAD.dexIds with at least GRAD.minLiq liquidity. It does not confirm a bonding-curve graduation, so check the source before relying on it. Hot and picks are ranked by fixed rules and do not predict price. Risk flags: liquidity under $10k, under 1h old, sell-heavy last hour, or 1h volume more than 5x liquidity. Not financial advice; always verify before trading.
+</footer>
+
+<script>
+const REFRESH_MS = 50000;   // auto-refresh interval for all lists
+const HIST_MS = 35 * 60000; // how long to keep price snapshots for the 30m change
+
+// Blockchains the scanner can show. "slug" is the DexScreener chain name used in the API URLs.
+// The Robinhood slug is not confirmed yet: if its tab stays empty, change this value.
+const CHAINS = {
+  solana:     { label: 'Solana',           slug: 'solana' },
+  robinhood:  { label: 'Robinhood Chain',  slug: 'robinhood' }
+};
+
+// Graduated lane rule (approximation). Change these to tune the lane.
+const GRAD = {
+  dexIds: ['pumpswap', 'raydium', 'meteora'], // DEX pools a graduated token typically trades on
+  minLiq: 20000
+};
+
+const $ = s => document.querySelector(s);
+const usd = n => (n == null || isNaN(n)) ? '–' : '$' + Number(n).toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 2 });
+const pct = n => (n == null || isNaN(n)) ? '–' : (n > 0 ? '+' : '') + Number(n).toFixed(1) + '%';
+const pctCls = n => (n == null || isNaN(n)) ? '' : (n >= 0 ? 'up' : 'dn');
+const ageLabel = ms => {
+  const m = (Date.now() - ms) / 60000;
+  if (m < 60) return Math.max(0, Math.floor(m)) + 'm';
+  if (m < 1440) return Math.floor(m / 60) + 'h';
+  return Math.floor(m / 1440) + 'd';
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const shortAddr = a => a.slice(0, 6) + '…' + a.slice(-4);
+
+// Metric getters. Each returns a number (percent or dollars), or null when unknown.
+const ageH   = p => (Date.now() - p.pairCreatedAt) / 3600000;
+const tx1h   = p => (p.txns?.h1?.buys || 0) + (p.txns?.h1?.sells || 0);
+const c5     = p => p.priceChange?.m5 ?? null;
+const c30    = p => p.c30 ?? null;
+const c1h    = p => p.priceChange?.h1 ?? null;
+const v5     = p => p.volume?.m5 ?? null;
+const v1h    = p => p.volume?.h1 ?? null;
+const v24h   = p => p.volume?.h24 ?? null;
+const liq    = p => p.liquidity?.usd ?? null;
+const mcap   = p => (p.marketCap || p.fdv) ?? null;
+const N      = v => v ?? -1e15; // sort helper: unknown values sort last
+
+// Each list is described once here; the filter form and sorting are built from this.
+const SECTIONS = {
+  launch: {
+    feed: 'launch',
+    ranges: [
+      { key: 'age',  label: 'Age (hours)',    step: '0.5',  get: ageH },
+      { key: 'liq',  label: 'Liquidity ($)',  step: '1000', get: liq },
+      { key: 'c5',   label: '5m change (%)',  step: 'any',  get: c5 },
+      { key: 'c30',  label: '30m change (%)', step: 'any',  get: c30 },
+      { key: 'v5',   label: '5m volume ($)',  step: '100',  get: v5 },
+      { key: 'v1h',  label: '1h volume ($)',  step: '1000', get: v1h },
+      { key: 'mcap', label: 'Market cap ($)', step: '1000', get: mcap },
+      { key: 'tx',   label: '1h txns',        step: '1',    get: tx1h }
+    ],
+    sorts: [
+      ['age',  'Newest first', p => p.pairCreatedAt],
+      ['liq',  'Liquidity',    p => N(liq(p))],
+      ['c5',   '5m change',    p => N(c5(p))],
+      ['c30',  '30m change',   p => N(c30(p))],
+      ['v5',   '5m volume',    p => N(v5(p))],
+      ['v1h',  '1h volume',    p => N(v1h(p))],
+      ['mc',   'Market cap',   p => N(mcap(p))]
+    ]
+  },
+  grad: {
+    feed: 'launch',
+    ranges: [
+      { key: 'age',  label: 'Age (hours)',    step: '0.5',  get: ageH },
+      { key: 'liq',  label: 'Liquidity ($)',  step: '1000', get: liq },
+      { key: 'c5',   label: '5m change (%)',  step: 'any',  get: c5 },
+      { key: 'c30',  label: '30m change (%)', step: 'any',  get: c30 },
+      { key: 'v5',   label: '5m volume ($)',  step: '100',  get: v5 },
+      { key: 'v1h',  label: '1h volume ($)',  step: '1000', get: v1h },
+      { key: 'mcap', label: 'Market cap ($)', step: '1000', get: mcap },
+      { key: 'tx',   label: '1h txns',        step: '1',    get: tx1h }
+    ],
+    sorts: [
+      ['liq',  'Liquidity',    p => N(liq(p))],
+      ['age',  'Newest first', p => p.pairCreatedAt],
+      ['c5',   '5m change',    p => N(c5(p))],
+      ['c30',  '30m change',   p => N(c30(p))],
+      ['v1h',  '1h volume',    p => N(v1h(p))],
+      ['mc',   'Market cap',   p => N(mcap(p))]
+    ]
+  },
+  trend: {
+    feed: 'trend',
+    ranges: [
+      { key: 'c5',   label: '5m change (%)',  step: 'any',  get: c5 },
+      { key: 'c30',  label: '30m change (%)', step: 'any',  get: c30 },
+      { key: 'c1h',  label: '1h change (%)',  step: 'any',  get: c1h },
+      { key: 'v5',   label: '5m volume ($)',  step: '100',  get: v5 },
+      { key: 'v24h', label: '24h volume ($)', step: '1000', get: v24h },
+      { key: 'liq',  label: 'Liquidity ($)',  step: '1000', get: liq },
+      { key: 'mcap', label: 'Market cap ($)', step: '1000', get: mcap },
+      { key: 'tx',   label: '1h txns',        step: '1',    get: tx1h }
+    ],
+    sorts: [
+      ['v24h', '24h volume',   p => N(v24h(p))],
+      ['liq',  'Liquidity',    p => N(liq(p))],
+      ['c5',   '5m change',    p => N(c5(p))],
+      ['c30',  '30m change',   p => N(c30(p))],
+      ['c1h',  '1h change',    p => N(c1h(p))],
+      ['mc',   'Market cap',   p => N(mcap(p))],
+      ['age',  'Newest first', p => p.pairCreatedAt]
+    ]
+  }
+};
+const LISTS = Object.keys(SECTIONS);
+
+// Data feeds: "launch" feeds the New pairs and Graduated lists, "trend" feeds Trending.
+const state = { launch: [], trend: [], grad: [] };
+const feedOk = { launch: 0, trend: 0 };
+const feedErr = { launch: '', trend: '' };
+let inFlight = false;
+let nextAt = 0;
+let chain = 'solana';
+let openAddr = null; // token whose detail panel is open
+
+async function getJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url} returned ${r.status}`);
+  return r.json();
+}
+
+// Fetch pair data for token addresses on the current chain; keep the most liquid pair per token.
+async function pairsFor(addresses) {
+  const best = new Map();
+  for (let i = 0; i < addresses.length; i += 30) {
+    const chunk = addresses.slice(i, i + 30);
+    try {
+      const data = await getJSON(`https://api.dexscreener.com/tokens/v1/${CHAINS[chain].slug}/${chunk.join(',')}`);
+      for (const p of data) {
+        const a = p.baseToken.address;
+        const cur = best.get(a);
+        if (!cur || (p.liquidity?.usd || 0) > (cur.liquidity?.usd || 0)) best.set(a, p);
+      }
+    } catch (e) {
+      // Skip this chunk and keep going with the rest
+    }
+  }
+  return [...best.values()];
+}
+
+// ---------- 30m change and price flashes, from our own snapshots ----------
+
+const hist = new Map();      // "chain:address" -> [{t, price}] in time order
+const lastPrice = new Map(); // "chain:address" -> last price seen
+const flashFor = new Map();  // "chain:address" -> 'up' | 'dn', cleared after each refresh
+
+function change30(key, price, now) {
+  const arr = hist.get(key) || [];
+  const target = now - 30 * 60000;
+  let base = null;
+  for (const s of arr) {
+    if (s.t <= target) base = s; else break;
+  }
+  if (!base || !(price > 0)) return null;
+  return (price / base.price - 1) * 100;
+}
+
+function recordSnapshots(pairs) {
+  const now = Date.now();
+  for (const p of pairs) {
+    const key = chain + ':' + p.baseToken.address;
+    const price = Number(p.priceUsd);
+    const arr = hist.get(key) || [];
+    if (price > 0) arr.push({ t: now, price });
+    while (arr.length && now - arr[0].t > HIST_MS) arr.shift();
+    hist.set(key, arr);
+    p.c30 = change30(key, price, now);
+
+    // Flash only when the price really moved since the last refresh (the same token can appear in two lists)
+    const last = lastPrice.get(key);
+    if (last != null && price > 0 && price !== last) flashFor.set(key, price > last ? 'up' : 'dn');
+    if (price > 0) lastPrice.set(key, price);
+  }
+}
+
+// ---------- Loading and refresh ----------
+
+// One fetch of new profiles feeds both New pairs and Graduated.
+async function loadLaunchFeed() {
+  try {
+    const slug = CHAINS[chain].slug;
+    const profiles = await getJSON('https://api.dexscreener.com/token-profiles/latest/v1');
+    const addrs = [...new Set(profiles.filter(p => p.chainId === slug).map(p => p.tokenAddress))].slice(0, 90);
+    const pairs = await pairsFor(addrs);
+    recordSnapshots(pairs);
+    state.launch = pairs;
+    state.grad = pairs.filter(p => GRAD.dexIds.includes(p.dexId) && (liq(p) || 0) >= GRAD.minLiq);
+    feedOk.launch = Date.now();
+    feedErr.launch = '';
+    render('launch');
+    render('grad');
+  } catch (e) {
+    console.error(e);
+    feedErr.launch = e.message; // keep the previous data on screen
+  }
+}
+
+async function loadTrendFeed() {
+  try {
+    const slug = CHAINS[chain].slug;
+    const boosts = await getJSON('https://api.dexscreener.com/token-boosts/top/v1');
+    const addrs = [...new Set(boosts.filter(b => b.chainId === slug).map(b => b.tokenAddress))].slice(0, 90);
+    const pairs = await pairsFor(addrs);
+    recordSnapshots(pairs);
+    state.trend = pairs;
+    feedOk.trend = Date.now();
+    feedErr.trend = '';
+    render('trend');
+  } catch (e) {
+    console.error(e);
+    feedErr.trend = e.message;
+  }
+}
+
+async function refreshAll() {
+  if (inFlight) return;
+  inFlight = true;
+  $('#refresh-all').disabled = true;
+  try {
+    await Promise.all([loadLaunchFeed(), loadTrendFeed()]);
+  } finally {
+    flashFor.clear(); // flashes show once per refresh, not on every filter change
+    nextAt = Date.now() + REFRESH_MS;
+    inFlight = false;
+    $('#refresh-all').disabled = false;
+    if (openAddr) renderDetail(); // keep an open panel up to date
+    tick();
+  }
+}
+
+// ---------- Live countdown and status (runs 4x a second) ----------
+
+function statusText(list, now) {
+  const feed = SECTIONS[list].feed;
+  if (feedErr[feed]) return `Failed: ${feedErr[feed]}`;
+  if (!feedOk[feed]) return 'Loading…';
+  const ago = Math.floor((now - feedOk[feed]) / 1000);
+  return `${CHAINS[chain].label} · updated ${ago}s ago · ${state[list].length} pairs`;
+}
+
+function tick() {
+  try {
+    const now = Date.now();
+    const left = Math.max(0, nextAt - now);
+    const secs = Math.ceil(left / 1000);
+    $('#countdown').textContent = inFlight ? 'refreshing…' : secs + 's';
+    $('#cd-bar').style.width = nextAt ? Math.min(100, Math.max(0, 100 - left / REFRESH_MS * 100)) + '%' : '0%';
+    for (const list of LISTS) {
+      $('#cd-' + list).textContent = inFlight ? 'Refreshing…' : `Next refresh in ${secs}s`;
+      const st = $('#st-' + list);
+      st.textContent = statusText(list, now);
+      st.classList.toggle('err', !!feedErr[SECTIONS[list].feed]);
+    }
+    $('#live-dot').classList.toggle('err', !!(feedErr.launch || feedErr.trend));
+    if (!inFlight && nextAt && now >= nextAt) refreshAll();
+  } catch (e) {
+    console.error('tick failed:', e);
+  }
+}
+
+// ---------- Blockchain selector ----------
+
+function initChainSelect() {
+  const sel = $('#chain-select');
+  sel.innerHTML = Object.entries(CHAINS).map(([k, c]) => `<option value="${k}">${esc(c.label)}</option>`).join('');
+  let saved = null;
+  try { saved = localStorage.getItem('solanaScanner.chain'); } catch (e) { /* storage blocked */ }
+  chain = CHAINS[saved] ? saved : 'solana';
+  sel.value = chain;
+  sel.addEventListener('change', () => {
+    chain = sel.value;
+    try { localStorage.setItem('solanaScanner.chain', chain); } catch (e) { /* storage blocked */ }
+    // Clear the old chain's rows so nothing from the other chain is shown
+    for (const k of LISTS) state[k] = [];
+    feedOk.launch = 0; feedOk.trend = 0;
+    feedErr.launch = ''; feedErr.trend = '';
+    flashFor.clear();
+    closeDetail();
+    for (const k of LISTS) render(k);
+    refreshAll();
+  });
+}
+
+// ---------- Layout: side-by-side lanes or stacked rows ----------
+
+function applyLayout(mode) {
+  $('#lanes').classList.toggle('columns', mode === 'columns');
+  $('#layout-toggle').textContent = mode === 'columns' ? '☰' : '▥';
+  $('#layout-toggle').title = mode === 'columns' ? 'Switch to stacked rows' : 'Switch to side-by-side columns';
+}
+
+function initLayout() {
+  let saved = null;
+  try { saved = localStorage.getItem('solanaScanner.layout'); } catch (e) { /* storage blocked */ }
+  // Side-by-side only on very wide screens by default, so each lane keeps enough room
+  const wide = window.matchMedia && window.matchMedia('(min-width: 1700px)').matches;
+  applyLayout(saved || (wide ? 'columns' : 'rows'));
+  $('#layout-toggle').addEventListener('click', () => {
+    const next = $('#lanes').classList.contains('columns') ? 'rows' : 'columns';
+    applyLayout(next);
+    try { localStorage.setItem('solanaScanner.layout', next); } catch (e) { /* storage blocked */ }
+  });
+}
+
+// ---------- Filter form (built from SECTIONS) ----------
+
+function buildForm(id) {
+  const s = SECTIONS[id];
+  const form = document.getElementById('f-' + id);
+  const ranges = s.ranges.map(r => `
+    <label class="range">${r.label}
+      <div class="pair">
+        <input name="${r.key}_min" type="number" step="${r.step}" placeholder="min">
+        <input name="${r.key}_max" type="number" step="${r.step}" placeholder="max">
+      </div>
+    </label>`).join('');
+  form.innerHTML = `
+    <label>Search<input name="q" placeholder="Symbol, name or address"></label>
+    ${ranges}
+    <label>Sort by<select name="sort">${s.sorts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+    <div class="preset-bar">
+      <label>Saved presets<select name="preset_pick"></select></label>
+      <button type="button" class="ghost" data-act="save">Save as preset</button>
+      <button type="button" class="ghost" data-act="delete">Delete preset</button>
+      <button type="button" class="ghost" data-act="reset">Reset filters</button>
+    </div>`;
+  refreshPresetList(id);
+}
+
+function currentValues(id) {
+  const vals = {};
+  for (const [k, v] of new FormData(document.getElementById('f-' + id))) {
+    if (k !== 'preset_pick') vals[k] = v;
+  }
+  return vals;
+}
+
+function readFilters(id) {
+  const s = SECTIONS[id];
+  const f = currentValues(id);
+  const num = v => (v === '' || v == null) ? null : Number(v);
+  return {
+    q: (f.q || '').trim().toLowerCase(),
+    sort: f.sort,
+    ranges: s.ranges.map(r => ({ ...r, min: num(f[r.key + '_min']), max: num(f[r.key + '_max'])}))
+  };
+}
+
+// Shows how many filters are set, on the Filters button, so you can see it while collapsed.
+function updateFilterCount(id) {
+  const vals = currentValues(id);
+  const n = Object.entries(vals).filter(([k, v]) => k !== 'sort' && String(v).trim() !== '').length;
+  const el = document.querySelector(`.toggle[data-target="f-${id}"] .cnt`);
+  if (el) el.textContent = n ? `· ${n} active` : '';
+}
+
+// ---------- Presets (localStorage, per list) ----------
+
+const presetKey = id => 'solanaScanner.presets.' + id;
+
+function loadPresets(id) {
+  try { return JSON.parse(localStorage.getItem(presetKey(id)) || '{}'); }
+  catch (e) { return {}; }
+}
+
+function storePresets(id, presets) {
+  try { localStorage.setItem(presetKey(id), JSON.stringify(presets)); }
+  catch (e) { /* storage blocked: presets just won't persist */ }
+}
+
+function refreshPresetList(id, selectName = '') {
+  const sel = document.querySelector(`#f-${id} [name=preset_pick]`);
+  const names = Object.keys(loadPresets(id));
+  sel.innerHTML = '<option value="">— choose —</option>' +
+    names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  sel.value = selectName && names.includes(selectName) ? selectName : '';
+}
+
+function applyValues(id, vals) {
+  const form = document.getElementById('f-' + id);
+  form.querySelectorAll('[name]').forEach(el => {
+    if (el.name === 'preset_pick') return;
+    el.value = vals[el.name] ?? '';
+  });
+}
+
+function savePreset(id) {
+  const name = (prompt('Name this preset:') || '').trim();
+  if (!name) return;
+  const presets = loadPresets(id);
+  presets[name] = currentValues(id);
+  storePresets(id, presets);
+  refreshPresetList(id, name);
+  render(id);
+}
+
+function deletePreset(id) {
+  const sel = document.querySelector(`#f-${id} [name=preset_pick]`);
+  if (!sel.value) return;
+  const presets = loadPresets(id);
+  delete presets[sel.value];
+  storePresets(id, presets);
+  refreshPresetList(id);
+  render(id);
+}
+
+function loadPreset(id) {
+  const name = document.querySelector(`#f-${id} [name=preset_pick]`).value;
+  if (!name) return;
+  const presets = loadPresets(id);
+  if (presets[name]) applyValues(id, presets[name]);
+  render(id);
+}
+
+// ---------- Colour tiers ----------
+
+function mcClass(v) {
+  if (v == null) return '';
+  if (v < 100000) return 'mc1';
+  if (v < 1000000) return 'mc2';
+  if (v < 10000000) return 'mc3';
+  return 'mc4';
+}
+
+function ageClass(hours) {
+  if (hours < 1) return 'age1';
+  if (hours < 6) return 'age2';
+  if (hours < 24) return 'age3';
+  return 'age4';
+}
+
+function volClass(v) {
+  if (v == null) return '';
+  if (v < 1000) return 'vt0';
+  if (v < 10000) return 'vt1';
+  if (v < 50000) return 'vt2';
+  if (v < 250000) return 'vt3';
+  return 'vt4';
+}
+
+function pctClass(n) {
+  if (n == null || isNaN(n)) return '';
+  if (n >= 50) return 'pz2';
+  if (n >= 10) return 'pz1';
+  if (n >= 0) return 'pz0';
+  if (n <= -50) return 'nz2';
+  if (n <= -10) return 'nz1';
+  return 'nz0';
+}
+
+const chip = (cls, text) => `<span class="chip ${cls}">${text}</span>`;
+const pctCell = n => (n == null || isNaN(n)) ? '–' : chip(pctClass(n), pct(n));
+const usdCell = (v, cls = '') => v == null ? '–' : (cls ? chip(cls, usd(v)) : usd(v));
+
+// ---------- Scoring: risk flags, hot score, picks ----------
+
+function risk(p) {
+  const flags = [];
+  const l = p.liquidity?.usd || 0;
+  const h1 = p.txns?.h1 || { buys: 0, sells: 0 };
+  const total = h1.buys + h1.sells;
+  if (l < 10000) flags.push('Low liquidity');
+  if (ageH(p) < 1) flags.push('Under 1h old');
+  if (total > 0 && h1.sells / total > 0.6) flags.push('Sell-heavy last hour');
+  if (l > 0 && (p.volume?.h1 || 0) / l > 5) flags.push('Volume far above liquidity');
+  return flags;
+}
+
+// Rules are in plain sight so you can change the weights. Score is 0 or higher.
+function hotScore(p) {
+  const reasons = [];
+  let s = 0;
+
+  const m5 = c5(p);
+  if (m5 != null && m5 > 0) {
+    s += Math.min(m5, 100) * 0.4;
+    if (m5 >= 10) reasons.push(`+${m5.toFixed(0)}% in 5m`);
+  }
+
+  const m30 = c30(p);
+  if (m30 != null && m30 > 0) {
+    s += Math.min(m30, 200) * 0.2;
+    if (m30 >= 20) reasons.push(`+${m30.toFixed(0)}% in 30m`);
+  }
+
+  // 5m volume compared with the average 5-minute volume over the last hour
+  const vol5 = v5(p) || 0;
+  const avg5 = Math.max((v1h(p) || 0) / 12, 1);
+  const ratio = vol5 / avg5;
+  if (ratio >= 2) {
+    s += Math.min(ratio, 10) * 4;
+    reasons.push(`5m volume ${ratio.toFixed(1)}× its hourly average`);
+  }
+
+  // Buy pressure over the last hour, only when there are enough trades to mean something
+  const h1 = p.txns?.h1 || { buys: 0, sells: 0 };
+  const tot = h1.buys + h1.sells;
+  if (tot >= 20) {
+    const br = h1.buys / tot;
+    if (br > 0.6) {
+      s += (br - 0.5) * 40;
+      reasons.push(`${Math.round(br * 100)}% buys in the last hour`);
+    }
+  }
+
+  const flags = risk(p);
+  s -= flags.length * 10;
+
+  return { score: Math.max(0, Math.round(s)), reasons, flags };
+}
+
+function allPairs() {
+  const m = new Map();
+  for (const p of [...state.launch, ...state.trend]) m.set(p.baseToken.address, p);
+  return [...m.values()];
+}
+
+// ---------- Hot & picks cards ----------
+
+function card({ p, score, reasons, flags }) {
+  const addr = p.baseToken.address;
+  const img = p.info?.imageUrl
+    ? `<img src="${esc(p.info.imageUrl)}" alt="" loading="lazy">`
+    : '<span class="ph"></span>';
+  const flagText = flags.length ? `${flags.length} risk flag${flags.length > 1 ? 's' : ''}` : 'No risk flags';
+  return `<article class="card">
+    <div class="card-top">
+      <div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small></div></div>
+      <span class="chip score" title="Score from the fixed rules">${score}</span>
+    </div>
+    <ul>${reasons.map(r => `<li>${esc(r)}</li>`).join('') || '<li>No strong signal right now</li>'}</ul>
+    <div class="card-stats">
+      <span>5m ${pctCell(c5(p))}</span>
+      <span>1h ${pctCell(c1h(p))}</span>
+      <span>Liq ${usd(liq(p))}</span>
+      <span>MC ${usd(mcap(p))}</span>
+    </div>
+    <div class="card-foot">
+      <span>${flagText}</span>
+      <a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>
+    </div>
+    <div><button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button></div>
+    ${socialsHtml(p)}
+  </article>`;
+}
+
+function renderPicks() {
+  const all = allPairs().map(p => ({ p, ...hotScore(p) }));
+  const hot = all
+    .filter(x => (liq(x.p) || 0) >= 10000 && x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+  const picks = all
+    .filter(x => (liq(x.p) || 0) >= 25000 && x.flags.length === 0 && (c5(x.p) ?? 0) >= 0 && x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+  $('#hot-grid').innerHTML = hot.map(card).join('') || '<div class="empty">No hot tokens right now.</div>';
+  $('#pick-grid').innerHTML = picks.map(card).join('') || '<div class="empty">No tokens pass the picks rules right now.</div>';
+}
+
+// Ticker: the biggest 5-minute gainers, repeated so the scroll loops smoothly
+function renderTicker() {
+  const movers = allPairs()
+    .filter(p => (c5(p) ?? 0) > 0)
+    .sort((a, b) => c5(b) - c5(a))
+    .slice(0, 12);
+  const items = movers.map(p =>
+    `<span class="tick-item"><b>${esc(p.baseToken.symbol)}</b><span class="up">${pct(c5(p))}</span></span>`
+  ).join('') || '<span class="tick-item">No movers yet…</span>';
+  $('#ticker-track').innerHTML = items + items;
+}
+
+// ---------- Token detail panel ----------
+
+function findPair(addr) {
+  return allPairs().find(p => p.baseToken.address === addr) || null;
+}
+
+function openDetail(addr) {
+  openAddr = addr;
+  $('#detail').hidden = false;
+  document.body.style.overflow = 'hidden';
+  renderDetail();
+  $('#detail').scrollTop = 0;
+}
+
+function closeDetail() {
+  openAddr = null;
+  $('#detail').hidden = true;
+  document.body.style.overflow = '';
+}
+
+function renderDetail() {
+  const p = openAddr && findPair(openAddr);
+  if (!p) {
+    $('#detail-body').innerHTML = `
+      <div class="dhead"><h2 id="d-title">Token not in the current list</h2>
+        <button class="ghost dclose" data-close aria-label="Close">✕</button></div>
+      <div class="empty">It may have dropped out of the lists after the last refresh.</div>`;
+    return;
+  }
+
+  const addr = p.baseToken.address;
+  const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const chartSrc = `https://dexscreener.com/${CHAINS[chain].slug}/${encodeURIComponent(p.pairAddress)}?embed=1&theme=${theme}`;
+  const flags = risk(p);
+
+  const tfs = [['5m', 'm5'], ['1h', 'h1'], ['6h', 'h6'], ['24h', 'h24']];
+  const activityRows = tfs.map(([label, k]) => {
+    const t = p.txns?.[k] || { buys: 0, sells: 0 };
+    const tot = t.buys + t.sells;
+    const buyPct = tot ? Math.round(t.buys / tot * 100) : null;
+    return `<tr>
+      <td>${label}</td>
+      <td class="${pctCls(p.priceChange?.[k])}">${pct(p.priceChange?.[k])}</td>
+      <td>${usd(p.volume?.[k])}</td>
+      <td class="up">${t.buys}</td>
+      <td class="dn">${t.sells}</td>
+      <td>${buyPct == null ? '–' : `<div class="bsbar ${buyPct < 50 ? 'sell' : ''}" title="${buyPct}% buys"><i style="width:${buyPct}%"></i></div> ${buyPct}%`}</td>
+    </tr>`;
+  }).join('');
+
+  const img = p.info?.imageUrl
+    ? `<img src="${esc(p.info.imageUrl)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover">`
+    : '';
+
+  $('#detail-body').innerHTML = `
+    <div class="dhead">
+      <div class="tok">${img}<div>
+        <h2 id="d-title">${esc(p.baseToken.symbol)} <small>${esc(p.baseToken.name)}</small></h2>
+        <small>${esc(addr)}</small><br>
+        <button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}">Copy contract ${esc(shortAddr(addr))} ⧉</button>
+        ${socialsHtml(p)}
+      </div></div>
+      <button class="ghost dclose" data-close aria-label="Close">✕</button>
+    </div>
+
+    <div class="dgrid">
+      <div class="dstat"><small>Price</small><b>${p.priceUsd ? '$' + Number(p.priceUsd).toPrecision(4) : '–'}</b></div>
+      <div class="dstat"><small>Market cap</small><b>${usd(mcap(p))}</b></div>
+      <div class="dstat"><small>Liquidity</small><b>${usd(liq(p))}</b></div>
+      <div class="dstat"><small>Age</small><b>${ageLabel(p.pairCreatedAt)}</b></div>
+      <div class="dstat"><small>30m change</small><b class="${pctCls(c30(p))}">${pct(c30(p))}</b></div>
+      <div class="dstat"><small>DEX</small><b>${esc(p.dexId || '–')}</b></div>
+      <div class="dstat"><small>Risk</small><b>${flags.length ? flags.length + ' flag' + (flags.length > 1 ? 's' : '') : 'Clean'}</b></div>
+      <div class="dstat"><small>Pair</small><b>${esc(shortAddr(p.pairAddress || ''))}</b></div>
+    </div>
+
+    <div class="dsec">Chart</div>
+    <iframe class="dchart" src="${esc(chartSrc)}" title="Price chart" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="dnote">If the chart is blank, DexScreener may block embedding. <a href="${esc(p.url)}" target="_blank" rel="noopener">Open the chart on DexScreener</a>.</div>
+
+    <div class="dsec">Buyers and sellers (refreshes every 50s)</div>
+    <div class="dtable"><table>
+      <thead><tr><th>Window</th><th>Price change</th><th>Volume</th><th>Buys</th><th>Sells</th><th>Buy share</th></tr></thead>
+      <tbody>${activityRows}</tbody>
+    </table></div>
+    <div class="dnote">Counts are the number of buy and sell transactions in each window, not individual trades. A live trade-by-trade feed needs a separate data source.</div>
+  `;
+}
+
+// ---------- Theme (dark / light) and black & white mode ----------
+
+function getSaved(key) {
+  try { return localStorage.getItem(key); }
+  catch (e) { return null; }
+}
+
+function setSaved(key, value) {
+  try { localStorage.setItem(key, value); }
+  catch (e) { /* storage blocked: setting resets on reload */ }
+}
+
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  $('#theme-toggle').textContent = t === 'light' ? '🌙' : '☀️';
+}
+
+function initTheme() {
+  const saved = getSaved('solanaScanner.theme');
+  const systemLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(saved || (systemLight ? 'light' : 'dark'));
+  $('#theme-toggle').addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    setSaved('solanaScanner.theme', next);
+    if (openAddr) renderDetail(); // the chart uses the page theme
+  });
+}
+
+function applyMono(on) {
+  document.documentElement.setAttribute('data-mono', on ? 'on' : 'off');
+  $('#mono-toggle').setAttribute('aria-pressed', String(on));
+}
+
+function initMono() {
+  applyMono(getSaved('solanaScanner.mono') === 'on');
+  $('#mono-toggle').addEventListener('click', () => {
+    const on = document.documentElement.getAttribute('data-mono') !== 'on';
+    applyMono(on);
+    setSaved('solanaScanner.mono', on ? 'on' : 'off');
+  });
+}
+
+// ---------- Collapsible filters ----------
+
+function setFiltersOpen(id, open) {
+  const form = document.getElementById('f-' + id);
+  const btn = document.querySelector(`.toggle[data-target="f-${id}"]`);
+  form.classList.toggle('collapsed', !open);
+  btn.setAttribute('aria-expanded', String(open));
+  btn.querySelector('.chev').textContent = open ? '▴' : '▾';
+}
+
+// ---------- Table rows and rendering ----------
+
+function socialLinks(p) {
+  const out = [];
+  const seen = new Set();
+  const add = (label, title, url) => {
+    if (!url || !/^https?:\/\//i.test(url) || seen.has(url)) return;
+    seen.add(url);
+    out.push({ label, title, url });
+  };
+  const SOCIAL_LABELS = { twitter: 'X', x: 'X', telegram: 'TG', discord: 'Discord', github: 'GitHub', medium: 'Medium' };
+  for (const w of p.info?.websites || []) add('Web', 'Website', w?.url);
+  for (const s of p.info?.socials || []) {
+    const t = String(s?.type || '').toLowerCase();
+    add(SOCIAL_LABELS[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Link'), t || 'Link', s?.url);
+  }
+  return out;
+}
+
+function socialsHtml(p) {
+  const links = socialLinks(p);
+  if (!links.length) return '';
+  return `<div class="socials">${links.map(l =>
+    `<a class="soc" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" title="${esc(l.title)}">${esc(l.label)}</a>`
+  ).join('')}</div>`;
+}
+
+function row(p, list) {
+  const flags = risk(p);
+  const cls = flags.length >= 2 ? 'bad' : flags.length === 1 ? 'warn' : 'good';
+  const label = flags.length ? flags.length + ' flag' + (flags.length > 1 ? 's' : '') : 'Clean';
+  const addr = p.baseToken.address;
+  const img = p.info?.imageUrl
+    ? `<img src="${esc(p.info.imageUrl)}" alt="" loading="lazy">`
+    : '<span class="ph"></span>';
+  const bigVol = list === 'trend' ? v24h(p) : v1h(p);
+  const ageHours = ageH(p);
+  const fl = flashFor.get(chain + ':' + addr);
+  return `<tr class="${fl ? 'flash-' + fl : ''}">
+    <td><div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small>
+      <button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button>
+      ${socialsHtml(p)}
+    </div></div></td>
+    <td>${p.priceUsd ? '$' + Number(p.priceUsd).toPrecision(3) : '–'}</td>
+    <td>${pctCell(c5(p))}</td>
+    <td>${pctCell(c30(p))}</td>
+    <td>${pctCell(c1h(p))}</td>
+    <td>${usdCell(v5(p), volClass(v5(p)))}</td>
+    <td>${usdCell(bigVol, volClass(bigVol))}</td>
+    <td>${usdCell(mcap(p), mcClass(mcap(p)))}</td>
+    <td>${usd(liq(p))}</td>
+    <td>${chip(ageClass(ageHours), ageLabel(p.pairCreatedAt))}</td>
+    <td><span class="risk ${cls}" title="${esc(flags.join(' · ') || 'No flags')}">${label}</span></td>
+    <td><a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a></td>
+  </tr>`;
+}
+
+// Keep a pair only if every range filter passes. An empty bound means no limit.
+// A pair with an unknown value is excluded only when that filter has a bound set.
+function apply(list) {
+  const f = readFilters(list);
+  const sort = SECTIONS[list].sorts.find(x => x[0] === f.sort) || SECTIONS[list].sorts[0];
+  const out = state[list].filter(p => {
+    if (f.q && !`${p.baseToken.symbol} ${p.baseToken.name} ${p.baseToken.address}`.toLowerCase().includes(f.q)) return false;
+    return f.ranges.every(r => {
+      const v = r.get(p);
+      if (v == null) return r.min == null && r.max == null;
+      if (r.min != null && v < r.min) return false;
+      if (r.max != null && v > r.max) return false;
+      return true;
+    });
+  });
+  out.sort((a, b) => sort[2](b) - sort[2](a));
+  return out;
+}
+
+function render(list) {
+  const rows = apply(list);
+  $('#b-' + list).innerHTML = rows.slice(0, 100).map(p => row(p, list)).join('') ||
+    `<tr><td colspan="12" class="empty">No pairs match these filters${state[list].length ? '' : ' (no data for ' + esc(CHAINS[chain].label) + ' yet)'}.</td></tr>`;
+  $('#c-' + list).textContent = `${rows.length} of ${state[list].length} shown`;
+  updateFilterCount(list);
+  renderPicks();
+  renderTicker();
+}
+
+// ---------- Copy contract address ----------
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const t = document.createElement('textarea');
+      t.value = text;
+      t.setAttribute('readonly', '');
+      t.style.position = 'fixed';
+      t.style.opacity = '0';
+      document.body.appendChild(t);
+      t.select();
+      const ok = document.execCommand('copy');
+      t.remove();
+      return ok;
+    } catch (e2) {
+      return false;
+    }
+  }
+}
+
+// One listener for copy buttons, token links and the close button
+document.addEventListener('click', async e => {
+  if (e.target.closest('[data-close]')) { closeDetail(); return; }
+  if (e.target.id === 'detail') { closeDetail(); return; } // click on the dark backdrop
+  const copyBtn = e.target.closest('button.copy');
+  if (copyBtn) {
+    const ok = await copyText(copyBtn.dataset.addr);
+    copyBtn.textContent = ok ? 'Copied ✓' : 'Copy failed';
+    setTimeout(() => { copyBtn.textContent = copyBtn.dataset.label + ' ⧉'; }, 1500);
+    return;
+  }
+  const opener = e.target.closest('[data-open]');
+  if (opener) openDetail(opener.dataset.open);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && openAddr) closeDetail();
+  if (e.key === 'Enter' && e.target.matches?.('[data-open]')) openDetail(e.target.dataset.open);
+});
+
+// ---------- Wiring ----------
+
+for (const id of LISTS) {
+  buildForm(id);
+  const form = document.getElementById('f-' + id);
+  form.addEventListener('input', () => render(id));
+  form.addEventListener('change', e => {
+    if (e.target.name === 'preset_pick') loadPreset(id);
+    else render(id);
+  });
+  form.addEventListener('click', e => {
+    const act = e.target.dataset.act;
+    if (act === 'save') savePreset(id);
+    if (act === 'delete') deletePreset(id);
+    if (act === 'reset') { form.reset(); form.querySelector('[name=preset_pick]').value = ''; render(id); }
+  });
+  document.querySelector(`.toggle[data-target="f-${id}"]`).addEventListener('click', () => {
+    const open = document.getElementById('f-' + id).classList.contains('collapsed');
+    setFiltersOpen(id, open);
+  });
+}
+
+// Filters always start folded, on every screen size. They only open when the user clicks Filters.
+for (const id of LISTS) setFiltersOpen(id, false);
+
+initChainSelect();
+initLayout();
+$('#refresh-all').addEventListener('click', refreshAll);
+initTheme();
+initMono();
+
+// The countdown timer starts before the first load, so the page stays live even if a fetch is slow.
+setInterval(tick, 250);
+
+async function init() {
+  $('#global-status').textContent = 'Loading all lists…';
+  await refreshAll();
+  $('#global-status').textContent = 'Data from DexScreener · auto-refresh every 50s';
+}
+
+init().catch(e => {
+  console.error('Page load failed:', e);
+  $('#global-status').textContent = 'Error loading data. Please try refresh.';
+});
+</script>
+</body>
+</html>
