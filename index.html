@@ -88,6 +88,15 @@ th.hl{color:var(--text);box-shadow:inset 0 -3px 0 #ffd23f}
 
 /* Price flash when a token's price moved since the last refresh */
 tr.flash-up td{animation:fUp 1.4s ease-out}
+tr.moved td{background:rgba(250,204,21,.14)}
+.signals{padding:10px 16px;border-bottom:1px solid var(--line)}
+.signals[hidden]{display:none}
+#sig-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:200px;overflow:auto}
+.sig-row{display:flex;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:13px}
+.sig-row small,.sig-time{opacity:.7}
+.sig-empty{opacity:.7;font-size:13px;margin:6px 0 0}
+#signal-toggle.on{box-shadow:inset 0 0 0 2px #facc15}
+tr.moved td:first-child{box-shadow:inset 3px 0 0 #facc15}
 tr.flash-dn td{animation:fDn 1.4s ease-out}
 @keyframes fUp{from{background:rgba(47,230,166,.28)}to{background:var(--card)}}
 @keyframes fDn{from{background:rgba(255,79,163,.28)}to{background:var(--card)}}
@@ -147,11 +156,13 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
 .detail{position:fixed;inset:0;background:var(--shade);display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow:auto;z-index:50}
 .detail[hidden]{display:none}
 .dpanel{background:var(--card);border:1px solid var(--line);border-radius:14px;width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:14px}
-.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;position:sticky;top:-16px;background:var(--card);z-index:2;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.tick-item[data-open]{cursor:pointer;padding:2px 8px;border-radius:999px;border:1px solid transparent}
+.tick-item[data-open]:hover,.tick-item[data-open]:focus-visible{border-color:var(--acc);outline:none}
 .dhead h2{margin:0;font-size:20px}
 .dhead small{color:var(--muted)}
-.dclose{font-size:18px;line-height:1;padding:6px 12px}
-.dchart{width:100%;height:420px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.dclose{font-size:20px;line-height:1;padding:10px 16px;min-width:48px;min-height:44px}
+.dchart{width:100%;height:560px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .dnote{color:var(--muted);font-size:12px}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .dstat{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
@@ -179,8 +190,10 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
   .bar{width:100px}
   .countdown{width:100%}
   .grid{grid-template-columns:1fr}
-  .dchart{height:300px}
-  .detail{padding:8px}
+  .dchart{height:70vh;min-height:380px}
+  .detail{padding:0}
+  .dpanel{border-radius:0;min-height:100vh;padding:12px;border:0}
+  .dhead{top:-12px}
 }
 </style>
 </head>
@@ -195,6 +208,10 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
     <div class="bar"><i id="cd-bar"></i></div>
     <div class="controls">
       <select id="chain-select" aria-label="Blockchain" title="Blockchain"></select>
+      <select id="sig-min" aria-label="Signal threshold" title="Alert when the 5m change is at least this">
+        <option value="5">5%</option><option value="10">10%</option><option value="20">20%</option><option value="50">50%</option>
+      </select>
+      <button class="ghost" id="signal-toggle" title="Turn signal alerts on or off" aria-label="Toggle signals">🔔 Signals <span id="sig-count"></span></button>
       <button class="ghost" id="layout-toggle" title="Switch between side-by-side columns and stacked rows" aria-label="Switch layout">▥</button>
       <button class="ghost" id="refresh-all">Refresh now</button>
       <button class="ghost" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch theme">☀️</button>
@@ -206,6 +223,11 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
 <div class="ticker" aria-label="Biggest 5-minute movers">
   <div class="track" id="ticker-track"><span class="tick-item">Loading movers…</span></div>
 </div>
+
+<section class="signals" id="signals" hidden>
+  <div class="sec-head"><div><h2>Signals</h2><small>Tokens whose 5m change just moved and is at or above your threshold</small></div><button class="ghost" id="sig-clear">Clear</button></div>
+  <div id="sig-list"></div>
+</section>
 
 <main>
   <section id="sec-picks">
@@ -323,6 +345,8 @@ const shortAddr = a => a.slice(0, 6) + '…' + a.slice(-4);
 const ageH   = p => (Date.now() - p.pairCreatedAt) / 3600000;
 const tx1h   = p => (p.txns?.h1?.buys || 0) + (p.txns?.h1?.sells || 0);
 const c5     = p => p.priceChange?.m5 ?? null;
+const gmgnUrl = addr => chain === 'solana' ? `https://gmgn.ai/sol/token/${encodeURIComponent(addr)}` : null;
+const gmgnLink = addr => { const u = gmgnUrl(addr); return u ? ` · <a href="${esc(u)}" target="_blank" rel="noopener">GMGN</a>` : ''; };
 const c30    = p => p.c30 ?? null;
 const c1h    = p => p.priceChange?.h1 ?? null;
 const v5     = p => p.volume?.m5 ?? null;
@@ -453,11 +477,19 @@ function change30(key, price, now) {
   return (price / base.price - 1) * 100;
 }
 
+const prev5 = new Map();     // "chain:address" -> last 5m change seen
+
 function recordSnapshots(pairs) {
   const now = Date.now();
   for (const p of pairs) {
     const key = chain + ':' + p.baseToken.address;
     const price = Number(p.priceUsd);
+
+    // Mark the row when its 5m change moved since the last refresh, so it jumps to the top
+    const m5 = p.priceChange ? p.priceChange.m5 : null;
+    const old5 = prev5.get(key);
+    p.moved = old5 !== undefined && m5 != null && m5 !== old5;
+    prev5.set(key, m5);
     const arr = hist.get(key) || [];
     if (price > 0) arr.push({ t: now, price });
     while (arr.length && now - arr[0].t > HIST_MS) arr.shift();
@@ -469,6 +501,74 @@ function recordSnapshots(pairs) {
     if (last != null && price > 0 && price !== last) flashFor.set(key, price > last ? 'up' : 'dn');
     if (price > 0) lastPrice.set(key, price);
   }
+}
+
+// ---------- Signals: alert when a token's 5m change moves and is at or above your threshold ----------
+
+const SIG_KEY = 'solanaScanner.signals';
+const signals = [];
+let sigOn = false, sigMin = 10, sigAudio = null;
+try {
+  const saved = JSON.parse(localStorage.getItem(SIG_KEY) || 'null');
+  if (saved) { sigOn = !!saved.on; sigMin = Number(saved.min) || 10; }
+} catch (e) { /* storage blocked */ }
+
+function saveSig() {
+  try { localStorage.setItem(SIG_KEY, JSON.stringify({ on: sigOn, min: sigMin })); } catch (e) { /* storage blocked */ }
+}
+
+function beep() {
+  try {
+    sigAudio = sigAudio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = sigAudio.createOscillator(), g = sigAudio.createGain();
+    o.frequency.value = 880; g.gain.value = 0.08;
+    o.connect(g); g.connect(sigAudio.destination);
+    o.start(); o.stop(sigAudio.currentTime + 0.18);
+  } catch (e) { /* audio blocked */ }
+}
+
+function checkSignals() {
+  if (!sigOn) return;
+  const seen = new Set();
+  let fired = false;
+  for (const p of [...state.launch, ...state.trend]) {
+    if (!p.moved || c5(p) == null || c5(p) < sigMin) continue;
+    const key = chain + ':' + p.baseToken.address;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    signals.unshift({ t: Date.now(), chain, addr: p.baseToken.address, symbol: p.baseToken.symbol, m5: c5(p), liq: liq(p) });
+    fired = true;
+  }
+  if (signals.length > 30) signals.length = 30;
+  if (fired) beep();
+  renderSignals();
+}
+
+function renderSignals() {
+  const list = signals.filter(s => s.chain === chain);
+  $('#sig-count').textContent = list.length ? `(${list.length})` : '';
+  $('#signals').hidden = !sigOn;
+  $('#sig-list').innerHTML = list.length
+    ? list.map(s => `<div class="sig-row" data-open="${esc(s.addr)}" role="button" tabindex="0">
+        <span class="sig-time">${new Date(s.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+        <b>${esc(s.symbol)}</b><span class="up">${pct(s.m5)}</span><small>Liq ${usd(s.liq)}</small>
+      </div>`).join('')
+    : `<p class="sig-empty">No signals yet. One appears when a token's 5m change moves and is at least ${sigMin}%.</p>`;
+}
+
+function initSignals() {
+  $('#signal-toggle').classList.toggle('on', sigOn);
+  $('#sig-min').value = String(sigMin);
+  $('#signal-toggle').addEventListener('click', () => {
+    sigOn = !sigOn;
+    saveSig();
+    $('#signal-toggle').classList.toggle('on', sigOn);
+    if (sigOn) beep(); // a click also unlocks audio in the browser
+    renderSignals();
+  });
+  $('#sig-min').addEventListener('change', e => { sigMin = Number(e.target.value); saveSig(); renderSignals(); });
+  $('#sig-clear').addEventListener('click', () => { signals.length = 0; renderSignals(); });
+  renderSignals();
 }
 
 // ---------- Loading and refresh ----------
@@ -516,6 +616,7 @@ async function refreshAll() {
   $('#refresh-all').disabled = true;
   try {
     await Promise.all([loadLaunchFeed(), loadTrendFeed()]);
+    checkSignals();
   } finally {
     flashFor.clear(); // flashes show once per refresh, not on every filter change
     nextAt = Date.now() + REFRESH_MS;
@@ -835,7 +936,7 @@ function card({ p, score, reasons, flags }) {
     </div>
     <div class="card-foot">
       <span>${flagText}</span>
-      <a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>
+      <span><a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>${gmgnLink(addr)}</span>
     </div>
     <div><button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button></div>
     ${socialsHtml(p)}
@@ -863,7 +964,7 @@ function renderTicker() {
     .sort((a, b) => c5(b) - c5(a))
     .slice(0, 12);
   const items = movers.map(p =>
-    `<span class="tick-item"><b>${esc(p.baseToken.symbol)}</b><span class="up">${pct(c5(p))}</span></span>`
+    `<span class="tick-item" data-open="${esc(p.baseToken.address)}" role="button" tabindex="0" title="Open ${esc(p.baseToken.symbol)} details"><b>${esc(p.baseToken.symbol)}</b><span class="up">${pct(c5(p))}</span></span>`
   ).join('') || '<span class="tick-item">No movers yet…</span>';
   $('#ticker-track').innerHTML = items + items;
 }
@@ -946,7 +1047,7 @@ function renderDetail() {
 
     <div class="dsec">Chart</div>
     <iframe class="dchart" src="${esc(chartSrc)}" title="Price chart" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-    <div class="dnote">If the chart is blank, DexScreener may block embedding. <a href="${esc(p.url)}" target="_blank" rel="noopener">Open the chart on DexScreener</a>.</div>
+    <div class="dnote">If the chart is blank, DexScreener may block embedding. <a href="${esc(p.url)}" target="_blank" rel="noopener">Open the chart on DexScreener</a>${gmgnUrl(p.baseToken.address) ? ` or <a href="${esc(gmgnUrl(p.baseToken.address))}" target="_blank" rel="noopener">GMGN</a>` : ''}.</div>
 
     <div class="dsec">Buyers and sellers (refreshes every 50s)</div>
     <div class="dtable"><table>
@@ -1048,7 +1149,8 @@ function row(p, list) {
   const bigVol = list === 'trend' ? v24h(p) : v1h(p);
   const ageHours = ageH(p);
   const fl = flashFor.get(chain + ':' + addr);
-  return `<tr class="${fl ? 'flash-' + fl : ''}">
+  const mv = p.moved ? 'moved' : '';
+  return `<tr class="${mv} ${fl ? 'flash-' + fl : ''}">
     <td><div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small>
       <button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button>
       ${socialsHtml(p)}
@@ -1063,7 +1165,7 @@ function row(p, list) {
     <td>${usd(liq(p))}</td>
     <td>${chip(ageClass(ageHours), ageLabel(p.pairCreatedAt))}</td>
     <td><span class="risk ${cls}" title="${esc(flags.join(' · ') || 'No flags')}">${label}</span></td>
-    <td><a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a></td>
+    <td><a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>${gmgnLink(addr)}</td>
   </tr>`;
 }
 
@@ -1082,7 +1184,8 @@ function apply(list) {
       return true;
     });
   });
-  out.sort((a, b) => sort[2](b) - sort[2](a));
+  // Rows whose 5m value just changed go to the top, then the chosen sort applies
+  out.sort((a, b) => ((b.moved ? 1 : 0) - (a.moved ? 1 : 0)) || (sort[2](b) - sort[2](a)));
   return out;
 }
 
@@ -1170,6 +1273,7 @@ initLayout();
 $('#refresh-all').addEventListener('click', refreshAll);
 initTheme();
 initMono();
+initSignals();
 
 // The countdown timer starts before the first load, so the page stays live even if a fetch is slow.
 setInterval(tick, 250);
