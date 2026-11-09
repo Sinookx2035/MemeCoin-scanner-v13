@@ -32,6 +32,9 @@ button:disabled{opacity:.5;cursor:default}
 button.ghost{background:transparent;color:var(--text);border-color:var(--line)}
 button.copy{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:500;padding:2px 7px;margin-top:4px;background:transparent;color:var(--acc);border:1px solid var(--line)}
 button.copy:hover{border-color:var(--acc)}
+button.star{font-size:12px;padding:1px 7px;margin-top:4px;background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:600}
+button.star.on{color:var(--warn);border-color:var(--warn)}
+button.star:hover{border-color:var(--acc);color:var(--acc)}
 .preset-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;width:100%;padding-top:8px;border-top:1px dashed var(--line)}
 .preset-bar label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px;min-width:180px}
 .meta{padding:8px 16px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -41,7 +44,7 @@ button.copy:hover{border-color:var(--acc)}
 .lanes{display:grid;gap:16px;grid-template-columns:1fr;align-items:start}
 .lanes.columns{grid-template-columns:repeat(3,minmax(0,1fr))}
 .lanes.columns .wrap{max-height:64vh}
-.lanes.columns table{min-width:1040px}
+.lanes.columns table{min-width:1180px}
 .lanes.columns .meta{flex-direction:column}
 
 /* Live ticker of the biggest 5m movers */
@@ -69,6 +72,13 @@ button.copy:hover{border-color:var(--acc)}
 
 .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap}
 .score{background:linear-gradient(90deg,#ff4fa3,#ffd23f,#2fe6a6)}
+.dump{background:linear-gradient(90deg,#ff4fa3,#e5484d);color:#fff}
+.ck{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line)}
+.ck.pass{background:rgba(47,191,113,.15);color:var(--good);border-color:transparent}
+.ck.warn{background:rgba(224,165,38,.15);color:var(--warn);border-color:transparent}
+.ck.fail{background:rgba(229,72,77,.15);color:var(--bad);border-color:transparent}
+.checklist{display:flex;flex-wrap:wrap;gap:6px}
+.checklist-note{color:var(--muted);font-size:12px;margin-top:6px}
 
 /* Clickable token names open the detail panel */
 [data-open]{cursor:pointer}
@@ -78,28 +88,43 @@ button.copy:hover{border-color:var(--acc)}
 
 /* Scrollable table: header row and token column stay visible while scrolling */
 .wrap{overflow:auto;max-height:70vh}
-table{width:100%;border-collapse:separate;border-spacing:0;min-width:1040px}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:1180px}
 th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--card)}
 thead th{position:sticky;top:0;z-index:2;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;z-index:1}
 thead th:first-child{z-index:3}
 td:last-child,th:last-child{text-align:center}
 th.hl{color:var(--text);box-shadow:inset 0 -3px 0 #ffd23f}
+.metric{font-variant-numeric:tabular-nums;font-size:12px}
+.metric.hot{color:var(--warn);font-weight:700}
+.trades{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;max-width:150px;margin:0 auto}
+.trade{font-size:10px;font-weight:600;padding:1px 5px;border:1px solid var(--line);border-radius:6px;color:var(--muted);text-decoration:none}
+.trade:hover{border-color:var(--acc);color:var(--acc)}
 
 /* Price flash when a token's price moved since the last refresh */
 tr.flash-up td{animation:fUp 1.4s ease-out}
 tr.moved td{background:rgba(250,204,21,.14)}
-.signals{padding:10px 16px;border-bottom:1px solid var(--line)}
-.signals[hidden]{display:none}
-#sig-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:200px;overflow:auto}
+.signals,.watchbox{padding:10px 16px;border-bottom:1px solid var(--line)}
+.signals[hidden],.watchbox[hidden]{display:none}
+#sig-list,#alert-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:200px;overflow:auto}
 .sig-row{display:flex;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:13px}
 .sig-row small,.sig-time{opacity:.7}
 .sig-empty{opacity:.7;font-size:13px;margin:6px 0 0}
-#signal-toggle.on{box-shadow:inset 0 0 0 2px #facc15}
+#signal-toggle.on,#watch-toggle.on{box-shadow:inset 0 0 0 2px #facc15}
 tr.moved td:first-child{box-shadow:inset 3px 0 0 #facc15}
 tr.flash-dn td{animation:fDn 1.4s ease-out}
 @keyframes fUp{from{background:rgba(47,230,166,.28)}to{background:var(--card)}}
 @keyframes fDn{from{background:rgba(255,79,163,.28)}to{background:var(--card)}}
+
+/* Watchlist panel */
+.watch-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:10px 0 4px}
+.watch-tools label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);min-width:120px}
+.watch-tools input{width:110px}
+.watch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-top:10px}
+.wcard{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.wcard.missing{opacity:.75}
+.wmeta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted)}
+.wacts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 
 /* Radiant chips */
 .mc1{background:linear-gradient(90deg,#9fb3c8,#c7d3e0)}
@@ -125,7 +150,7 @@ tr.flash-dn td{animation:fDn 1.4s ease-out}
 .dn{color:var(--bad)}
 
 /* Black & white mode: the whole page goes grayscale */
-html[data-mono="on"] table,html[data-mono="on"] .grid,html[data-mono="on"] .detail{filter:grayscale(1)}
+html[data-mono="on"] table,html[data-mono="on"] .grid,html[data-mono="on"] .detail,html[data-mono="on"] .watch-grid{filter:grayscale(1)}
 html[data-mono="on"] h1{background:none;-webkit-text-fill-color:var(--text);color:var(--text)}
 html[data-mono="on"] .bar i{background:var(--text)}
 html[data-mono="on"] .track{filter:grayscale(1)}
@@ -175,6 +200,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
 .bsbar i{display:block;height:100%;background:linear-gradient(90deg,#2fe6a6,#7ae7ff)}
 .bsbar.sell i{background:linear-gradient(90deg,#ff4fa3,#ff8a3d)}
 .dsec{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dhead-actions{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
 
 @media (prefers-reduced-motion: reduce){
   .track,.live,.card,tr.flash-up td,tr.flash-dn td{animation:none !important}
@@ -194,6 +220,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
   .detail{padding:0}
   .dpanel{border-radius:0;min-height:100vh;padding:12px;border:0}
   .dhead{top:-12px}
+  table{min-width:980px}
 }
 </style>
 </head>
@@ -212,6 +239,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
         <option value="5">5%</option><option value="10">10%</option><option value="20">20%</option><option value="50">50%</option>
       </select>
       <button class="ghost" id="signal-toggle" title="Turn signal alerts on or off" aria-label="Toggle signals">🔔 Signals <span id="sig-count"></span></button>
+      <button class="ghost" id="watch-toggle" title="Show or hide watchlist and price alerts" aria-label="Toggle watchlist">★ Watch <span id="watch-count"></span></button>
       <button class="ghost" id="layout-toggle" title="Switch between side-by-side columns and stacked rows" aria-label="Switch layout">▥</button>
       <button class="ghost" id="refresh-all">Refresh now</button>
       <button class="ghost" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch theme">☀️</button>
@@ -227,6 +255,38 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
 <section class="signals" id="signals" hidden>
   <div class="sec-head"><div><h2>Signals</h2><small>Tokens whose 5m change just moved and is at or above your threshold</small></div><button class="ghost" id="sig-clear">Clear</button></div>
   <div id="sig-list"></div>
+</section>
+
+<section class="watchbox" id="watchbox" hidden>
+  <div class="sec-head">
+    <div>
+      <h2>Watchlist &amp; alerts</h2>
+      <p>Saved locally on this device. Live data comes from the current feeds when present; missing tokens get an occasional DexScreener lookup.</p>
+    </div>
+    <div class="sec-tools">
+      <button class="ghost" id="alert-notify" title="Ask the browser for desktop notifications">Notify</button>
+      <button class="ghost" id="alert-clear">Clear alerts</button>
+    </div>
+  </div>
+  <div class="watch-tools">
+    <label>Price move alert (%)
+      <input id="alert-price-pct" type="number" min="1" step="1" value="15" title="Alert when watched price moves this % since last snapshot">
+    </label>
+    <label>Liquidity drop alert (%)
+      <input id="alert-liq-pct" type="number" min="1" step="1" value="25" title="Alert when watched liquidity drops by this %">
+    </label>
+    <label>Alerts
+      <select id="alert-enable">
+        <option value="on">On</option>
+        <option value="off">Off</option>
+      </select>
+    </label>
+  </div>
+  <div class="watch-grid" id="watch-grid"></div>
+  <div class="sec-head" style="border-top:1px solid var(--line);margin-top:12px;padding-left:0;padding-right:0">
+    <div><h2 style="font-size:14px">Alert history</h2><small>Watchlist price and liquidity alerts for this session</small></div>
+  </div>
+  <div id="alert-list"></div>
 </section>
 
 <main>
@@ -262,7 +322,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
       <form class="filters" id="f-launch" autocomplete="off"></form>
       <div class="meta"><span id="c-launch"></span><span id="cd-launch"></span></div>
       <div class="wrap"><table>
-        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th>5m vol</th><th>1h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Chart</th></tr></thead>
+        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th title="1h buy share">Buy%</th><th title="1h volume ÷ liquidity">V/L</th><th>5m vol</th><th>1h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Trade</th><th>Chart</th></tr></thead>
         <tbody id="b-launch"></tbody>
       </table></div>
     </section>
@@ -278,7 +338,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
       <form class="filters" id="f-grad" autocomplete="off"></form>
       <div class="meta"><span id="c-grad"></span><span id="cd-grad"></span></div>
       <div class="wrap"><table>
-        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th>5m vol</th><th>1h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Chart</th></tr></thead>
+        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th title="1h buy share">Buy%</th><th title="1h volume ÷ liquidity">V/L</th><th>5m vol</th><th>1h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Trade</th><th>Chart</th></tr></thead>
         <tbody id="b-grad"></tbody>
       </table></div>
     </section>
@@ -294,7 +354,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
       <form class="filters" id="f-trend" autocomplete="off"></form>
       <div class="meta"><span id="c-trend"></span><span id="cd-trend"></span></div>
       <div class="wrap"><table>
-        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th>5m vol</th><th>24h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Chart</th></tr></thead>
+        <thead><tr><th>Token</th><th>Price</th><th>5m</th><th>30m</th><th>1h</th><th title="1h buy share">Buy%</th><th title="1h volume ÷ liquidity">V/L</th><th>5m vol</th><th>24h vol</th><th class="hl">Mkt cap</th><th>Liquidity</th><th>Age</th><th>Risk</th><th>Trade</th><th>Chart</th></tr></thead>
         <tbody id="b-trend"></tbody>
       </table></div>
     </section>
@@ -308,10 +368,11 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
 </div>
 
 <footer>
-  Data from DexScreener public endpoints. Website and social links come from each token's DexScreener profile, which the token's creator submits, so they are not verified. 5m and 1h changes come from DexScreener. 30m change is calculated from this page's own snapshots, so it shows "–" until about 30 minutes after the page opens. DexScreener does not provide 30m volume. Buy and sell counts are per time window and refresh with the page every 50 seconds; they are not a live trade-by-trade feed. The chart in the detail panel is DexScreener's embedded chart; if it stays blank, use the Chart link. Graduated is an approximation: it lists tokens on the DEX pools named in GRAD.dexIds with at least GRAD.minLiq liquidity. It does not confirm a bonding-curve graduation, so check the source before relying on it. Hot and picks are ranked by fixed rules and do not predict price. Risk flags: liquidity under $10k, under 1h old, sell-heavy last hour, or 1h volume more than 5x liquidity. Not financial advice; always verify before trading.
+  Data from DexScreener public endpoints. Website and social links come from each token's DexScreener profile, which the token's creator submits, so they are not verified. 5m and 1h changes come from DexScreener. 30m change is calculated from this page's own snapshots, so it shows "–" until about 30 minutes after the page opens. DexScreener does not provide 30m volume. Buy and sell counts are per time window and refresh with the page every 50 seconds; they are not a live trade-by-trade feed. The chart in the detail panel is DexScreener's embedded chart; if it stays blank, use the Chart link. Graduated is an approximation: it lists tokens on the DEX pools named in GRAD.dexIds with at least GRAD.minLiq liquidity. It does not confirm a bonding-curve graduation, so check the source before relying on it. Hot and picks are ranked by fixed rules and do not predict price. Risk flags: liquidity under $10k, under 1h old, sell-heavy last hour, 1h volume more than 5x liquidity, or a dump/fade pattern (strong 5m green while 30m/1h roll over). Entry checklist and watchlist alerts are heuristics only, not advice. Trade links open third-party sites (Jupiter, Photon, BullX Neo, Axiom) in a new tab; they are convenience links, not endorsements. Watchlist and alert settings stay in this browser via localStorage. Not financial advice; always verify before trading.
 </footer>
 
 <script>
+
 const REFRESH_MS = 50000;   // auto-refresh interval for all lists
 const HIST_MS = 35 * 60000; // how long to keep price snapshots for the 30m change
 
@@ -355,6 +416,36 @@ const v24h   = p => p.volume?.h24 ?? null;
 const liq    = p => p.liquidity?.usd ?? null;
 const mcap   = p => (p.marketCap || p.fdv) ?? null;
 const N      = v => v ?? -1e15; // sort helper: unknown values sort last
+
+function buyPct1h(p) {
+  const h1 = p.txns?.h1 || { buys: 0, sells: 0 };
+  const tot = h1.buys + h1.sells;
+  if (!tot) return null;
+  return (h1.buys / tot) * 100;
+}
+
+function volLiq(p) {
+  const l = liq(p);
+  if (!(l > 0)) return null;
+  const v = v1h(p);
+  if (v == null) return null;
+  return v / l;
+}
+
+function isDumpFade(p) {
+  // Classic trap: strong 5m green while 30m and/or 1h are rolling over negative (or fading hard).
+  const m5 = c5(p), m30 = c30(p), m1 = c1h(p);
+  if (m5 == null || !(m5 >= 8)) return false;
+  const m30Bad = m30 != null && (m30 <= -5 || (m5 - m30) >= 20 && m30 < 0);
+  const m1Bad = m1 != null && (m1 <= -8 || (m5 - m1) >= 25 && m1 < 0);
+  // Also catch hard fade: 5m still green but both higher TFs clearly negative
+  const bothNeg = (m30 != null && m30 < 0) && (m1 != null && m1 < 0);
+  return bothNeg || m30Bad || m1Bad;
+}
+
+function dumpBadge(p) {
+  return isDumpFade(p) ? ` <span class="chip dump" title="Strong 5m green while 30m/1h roll over">Dump/fade</span>` : '';
+}
 
 // Each list is described once here; the filter form and sorting are built from this.
 const SECTIONS = {
@@ -434,6 +525,9 @@ let inFlight = false;
 let nextAt = 0;
 let chain = 'solana';
 let openAddr = null; // token whose detail panel is open
+const watchExtra = new Map(); // addr -> pair fetched for watchlist-only tokens
+let watchPanelOn = false;
+const seenDump = new Set(); // "chain:addr" already signaled for dump/fade
 
 async function getJSON(url) {
   const r = await fetch(url);
@@ -527,6 +621,13 @@ function beep() {
   } catch (e) { /* audio blocked */ }
 }
 
+function notifyBrowser(title, body) {
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    new Notification(title, { body, silent: false });
+  } catch (e) { /* notifications blocked */ }
+}
+
 function checkSignals() {
   if (!sigOn) return;
   const seen = new Set();
@@ -536,10 +637,21 @@ function checkSignals() {
     const key = chain + ':' + p.baseToken.address;
     if (seen.has(key)) continue;
     seen.add(key);
-    signals.unshift({ t: Date.now(), chain, addr: p.baseToken.address, symbol: p.baseToken.symbol, m5: c5(p), liq: liq(p) });
+    signals.unshift({ t: Date.now(), chain, addr: p.baseToken.address, symbol: p.baseToken.symbol, m5: c5(p), liq: liq(p), kind: 'move' });
     fired = true;
   }
-  if (signals.length > 30) signals.length = 30;
+  // Optionally surface newly appearing dump/fade patterns in Signals
+  for (const p of [...state.launch, ...state.trend]) {
+    if (!isDumpFade(p)) continue;
+    const key = chain + ':' + p.baseToken.address;
+    if (seenDump.has(key)) continue;
+    seenDump.add(key);
+    if (seen.has(key + ':dump')) continue;
+    seen.add(key + ':dump');
+    signals.unshift({ t: Date.now(), chain, addr: p.baseToken.address, symbol: p.baseToken.symbol, m5: c5(p), liq: liq(p), kind: 'dump' });
+    fired = true;
+  }
+  if (signals.length > 40) signals.length = 40;
   if (fired) beep();
   renderSignals();
 }
@@ -551,7 +663,9 @@ function renderSignals() {
   $('#sig-list').innerHTML = list.length
     ? list.map(s => `<div class="sig-row" data-open="${esc(s.addr)}" role="button" tabindex="0">
         <span class="sig-time">${new Date(s.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-        <b>${esc(s.symbol)}</b><span class="up">${pct(s.m5)}</span><small>Liq ${usd(s.liq)}</small>
+        <b>${esc(s.symbol)}</b>
+        ${s.kind === 'dump' ? '<span class="chip dump">Dump/fade</span>' : `<span class="up">${pct(s.m5)}</span>`}
+        <small>Liq ${usd(s.liq)}</small>
       </div>`).join('')
     : `<p class="sig-empty">No signals yet. One appears when a token's 5m change moves and is at least ${sigMin}%.</p>`;
 }
@@ -569,6 +683,301 @@ function initSignals() {
   $('#sig-min').addEventListener('change', e => { sigMin = Number(e.target.value); saveSig(); renderSignals(); });
   $('#sig-clear').addEventListener('click', () => { signals.length = 0; renderSignals(); });
   renderSignals();
+}
+
+// ---------- Watchlist + price / liquidity alerts ----------
+
+const WATCH_KEY = 'solanaScanner.watchlist';
+const ALERT_KEY = 'solanaScanner.alerts';
+const watchlist = []; // {chain, addr, symbol, name}
+const alertHistory = [];
+const watchSnap = new Map(); // "chain:addr" -> {price, liq}
+let alertCfg = { on: true, pricePct: 15, liqPct: 25 };
+
+try {
+  const w = JSON.parse(localStorage.getItem(WATCH_KEY) || '[]');
+  if (Array.isArray(w)) {
+    for (const item of w) {
+      if (item && item.addr && item.chain) watchlist.push({
+        chain: item.chain, addr: item.addr,
+        symbol: item.symbol || '???', name: item.name || ''
+      });
+    }
+  }
+} catch (e) { /* storage blocked */ }
+
+try {
+  const a = JSON.parse(localStorage.getItem(ALERT_KEY) || 'null');
+  if (a) {
+    alertCfg.on = a.on !== false;
+    alertCfg.pricePct = Number(a.pricePct) || 15;
+    alertCfg.liqPct = Number(a.liqPct) || 25;
+  }
+} catch (e) { /* storage blocked */ }
+
+function saveWatch() {
+  try { localStorage.setItem(WATCH_KEY, JSON.stringify(watchlist)); } catch (e) { /* storage blocked */ }
+}
+function saveAlertCfg() {
+  try { localStorage.setItem(ALERT_KEY, JSON.stringify(alertCfg)); } catch (e) { /* storage blocked */ }
+}
+
+function isWatched(addr, ch = chain) {
+  return watchlist.some(w => w.chain === ch && w.addr === addr);
+}
+
+function toggleWatch(addr, symbol, name) {
+  const i = watchlist.findIndex(w => w.chain === chain && w.addr === addr);
+  if (i >= 0) watchlist.splice(i, 1);
+  else watchlist.unshift({ chain, addr, symbol: symbol || '???', name: name || '' });
+  if (watchlist.length > 80) watchlist.length = 80;
+  saveWatch();
+  renderWatch();
+  // Refresh stars in open tables without a full data fetch
+  for (const id of LISTS) render(id);
+  if (openAddr) renderDetail();
+}
+
+function starBtn(addr, symbol, name) {
+  const on = isWatched(addr);
+  return `<button type="button" class="star ${on ? 'on' : ''}" data-watch="${esc(addr)}" data-sym="${esc(symbol || '')}" data-name="${esc(name || '')}" title="${on ? 'Remove from watchlist' : 'Add to watchlist'}">${on ? '★' : '☆'}</button>`;
+}
+
+function findAnyPair(addr) {
+  return findPair(addr) || watchExtra.get(addr) || null;
+}
+
+function pushAlert(entry) {
+  alertHistory.unshift(entry);
+  if (alertHistory.length > 40) alertHistory.length = 40;
+  beep();
+  notifyBrowser(entry.title, entry.body);
+  renderAlertHistory();
+}
+
+function checkWatchAlerts() {
+  if (!alertCfg.on) return;
+  for (const w of watchlist) {
+    if (w.chain !== chain) continue;
+    const p = findAnyPair(w.addr);
+    if (!p) continue;
+    const key = chain + ':' + w.addr;
+    const price = Number(p.priceUsd);
+    const L = liq(p);
+    const prev = watchSnap.get(key);
+    if (prev) {
+      if (prev.price > 0 && price > 0) {
+        const move = Math.abs(price / prev.price - 1) * 100;
+        if (move >= alertCfg.pricePct) {
+          const dir = price > prev.price ? 'up' : 'down';
+          pushAlert({
+            t: Date.now(), chain, addr: w.addr, symbol: w.symbol,
+            kind: 'price', title: `${w.symbol} price ${dir}`,
+            body: `${pct(price / prev.price * 100 - 100)} (threshold ${alertCfg.pricePct}%)`
+          });
+        }
+      }
+      if (prev.liq > 0 && L > 0) {
+        const drop = (prev.liq - L) / prev.liq * 100;
+        if (drop >= alertCfg.liqPct) {
+          pushAlert({
+            t: Date.now(), chain, addr: w.addr, symbol: w.symbol,
+            kind: 'liq', title: `${w.symbol} liquidity drop`,
+            body: `-${drop.toFixed(1)}% (threshold ${alertCfg.liqPct}%)`
+          });
+        }
+      }
+    }
+    watchSnap.set(key, { price: price || 0, liq: L || 0 });
+    // Keep symbol/name fresh
+    w.symbol = p.baseToken.symbol || w.symbol;
+    w.name = p.baseToken.name || w.name;
+  }
+  saveWatch();
+}
+
+async function refreshWatchMissing() {
+  const missing = watchlist
+    .filter(w => w.chain === chain && !findPair(w.addr))
+    .map(w => w.addr);
+  if (!missing.length) return;
+  // Cap lookups to avoid hammering DexScreener
+  const pairs = await pairsFor(missing.slice(0, 30));
+  recordSnapshots(pairs);
+  for (const p of pairs) watchExtra.set(p.baseToken.address, p);
+}
+
+function renderAlertHistory() {
+  const list = alertHistory.filter(a => a.chain === chain);
+  $('#alert-list').innerHTML = list.length
+    ? list.map(a => `<div class="sig-row" data-open="${esc(a.addr)}" role="button" tabindex="0">
+        <span class="sig-time">${new Date(a.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+        <b>${esc(a.symbol)}</b>
+        <span>${esc(a.kind === 'liq' ? 'Liq' : 'Price')}</span>
+        <small>${esc(a.body)}</small>
+      </div>`).join('')
+    : `<p class="sig-empty">No watchlist alerts yet. Alerts fire when a watched token's price moves or liquidity drops past your thresholds.</p>`;
+}
+
+function renderWatch() {
+  const mine = watchlist.filter(w => w.chain === chain);
+  $('#watch-count').textContent = mine.length ? `(${mine.length})` : '';
+  $('#watchbox').hidden = !watchPanelOn;
+  $('#watch-toggle').classList.toggle('on', watchPanelOn);
+  if (!watchPanelOn) return;
+
+  $('#alert-price-pct').value = String(alertCfg.pricePct);
+  $('#alert-liq-pct').value = String(alertCfg.liqPct);
+  $('#alert-enable').value = alertCfg.on ? 'on' : 'off';
+
+  if (!mine.length) {
+    $('#watch-grid').innerHTML = '<div class="empty">No watched tokens yet. Use ☆ on a row or in the detail panel.</div>';
+    renderAlertHistory();
+    return;
+  }
+
+  $('#watch-grid').innerHTML = mine.map(w => {
+    const p = findAnyPair(w.addr);
+    if (!p) {
+      return `<div class="wcard missing">
+        <div class="tok" data-open="${esc(w.addr)}"><span class="ph"></span><div><b class="tlink">${esc(w.symbol)}</b><small>${esc(w.name || 'Not in current feeds')}</small></div></div>
+        <div class="wmeta"><span>Waiting for feed or next lookup…</span></div>
+        <div class="wacts">${starBtn(w.addr, w.symbol, w.name)}</div>
+      </div>`;
+    }
+    const addr = p.baseToken.address;
+    const img = p.info?.imageUrl ? `<img src="${esc(p.info.imageUrl)}" alt="" loading="lazy">` : '<span class="ph"></span>';
+    return `<div class="wcard">
+      <div class="tok" data-open="${esc(addr)}">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small>${dumpBadge(p)}</div></div>
+      <div class="wmeta">
+        <span>${p.priceUsd ? '$' + Number(p.priceUsd).toPrecision(4) : '–'}</span>
+        <span>5m ${pctCell(c5(p))}</span>
+        <span>1h ${pctCell(c1h(p))}</span>
+        <span>Buy ${buyPct1h(p) == null ? '–' : Math.round(buyPct1h(p)) + '%'}</span>
+        <span>V/L ${volLiq(p) == null ? '–' : volLiq(p).toFixed(2)}</span>
+        <span>Liq ${usd(liq(p))}</span>
+      </div>
+      <div class="wacts">
+        ${starBtn(addr, p.baseToken.symbol, p.baseToken.name)}
+        ${tradeLinksHtml(p)}
+        <a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>${gmgnLink(addr)}
+      </div>
+    </div>`;
+  }).join('');
+  renderAlertHistory();
+}
+
+function initWatch() {
+  try { watchPanelOn = localStorage.getItem('solanaScanner.watchPanel') === 'on'; } catch (e) { /* */ }
+  $('#watch-toggle').addEventListener('click', () => {
+    watchPanelOn = !watchPanelOn;
+    try { localStorage.setItem('solanaScanner.watchPanel', watchPanelOn ? 'on' : 'off'); } catch (e) { /* */ }
+    renderWatch();
+  });
+  $('#alert-clear').addEventListener('click', () => { alertHistory.length = 0; renderAlertHistory(); });
+  $('#alert-notify').addEventListener('click', async () => {
+    if (!('Notification' in window)) { alert('Notifications are not supported in this browser.'); return; }
+    const perm = await Notification.requestPermission();
+    $('#alert-notify').textContent = perm === 'granted' ? 'Notify ✓' : 'Notify';
+  });
+  const syncCfg = () => {
+    alertCfg.pricePct = Math.max(1, Number($('#alert-price-pct').value) || 15);
+    alertCfg.liqPct = Math.max(1, Number($('#alert-liq-pct').value) || 25);
+    alertCfg.on = $('#alert-enable').value === 'on';
+    saveAlertCfg();
+  };
+  $('#alert-price-pct').addEventListener('change', syncCfg);
+  $('#alert-liq-pct').addEventListener('change', syncCfg);
+  $('#alert-enable').addEventListener('change', syncCfg);
+  renderWatch();
+}
+
+// ---------- Trade quick-links (Solana only) ----------
+
+function tradeLinks(p) {
+  if (chain !== 'solana') return [];
+  const mint = p.baseToken.address;
+  const pair = p.pairAddress || mint;
+  // Public URL patterns (best-known). Documented in changelog if a site changes routes.
+  return [
+    { label: 'Jup', title: 'Jupiter swap', url: `https://jup.ag/swap/SOL-${encodeURIComponent(mint)}` },
+    { label: 'Photon', title: 'Photon', url: `https://photon-sol.tinyastro.io/en/lp/${encodeURIComponent(pair)}` },
+    { label: 'BullX', title: 'BullX Neo', url: `https://neo.bullx.io/terminal?chainId=1399811149&address=${encodeURIComponent(mint)}` },
+    { label: 'Axiom', title: 'Axiom', url: `https://axiom.trade/t/${encodeURIComponent(mint)}-sol` }
+  ];
+}
+
+function tradeLinksHtml(p) {
+  const links = tradeLinks(p);
+  if (!links.length) return '';
+  return `<div class="trades">${links.map(l =>
+    `<a class="trade" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.title)}">${esc(l.label)}</a>`
+  ).join('')}</div>`;
+}
+
+// ---------- Entry checklist ----------
+
+function checklistItems(p) {
+  const items = [];
+  const L = liq(p) || 0;
+  const age = ageH(p);
+  const bp = buyPct1h(p);
+  const vl = volLiq(p);
+  const flags = risk(p);
+  const m5 = c5(p), m30 = c30(p), m1 = c1h(p);
+
+  // Liquidity floor
+  if (L >= 25000) items.push({ level: 'pass', label: 'Liq ≥ $25k' });
+  else if (L >= 10000) items.push({ level: 'warn', label: 'Liq $10–25k' });
+  else items.push({ level: 'fail', label: 'Liq < $10k' });
+
+  // Age
+  if (age >= 1) items.push({ level: 'pass', label: 'Age ≥ 1h' });
+  else if (age >= 0.25) items.push({ level: 'warn', label: 'Age 15–60m' });
+  else items.push({ level: 'fail', label: 'Age < 15m' });
+
+  // Buy % last hour
+  if (bp == null) items.push({ level: 'warn', label: 'Buy% n/a' });
+  else if (bp >= 55) items.push({ level: 'pass', label: `Buy ${Math.round(bp)}%` });
+  else if (bp >= 45) items.push({ level: 'warn', label: `Buy ${Math.round(bp)}%` });
+  else items.push({ level: 'fail', label: `Buy ${Math.round(bp)}%` });
+
+  // Vol / liq
+  if (vl == null) items.push({ level: 'warn', label: 'V/L n/a' });
+  else if (vl < 2) items.push({ level: 'pass', label: `V/L ${vl.toFixed(2)}` });
+  else if (vl < 5) items.push({ level: 'warn', label: `V/L ${vl.toFixed(2)}` });
+  else items.push({ level: 'fail', label: `V/L ${vl.toFixed(2)}` });
+
+  // Risk flags
+  const n = flags.length;
+  if (n === 0) items.push({ level: 'pass', label: '0 risk flags' });
+  else if (n === 1) items.push({ level: 'warn', label: '1 risk flag' });
+  else items.push({ level: 'fail', label: `${n} risk flags` });
+
+  // Direction alignment 5m / 30m / 1h
+  if (isDumpFade(p)) {
+    items.push({ level: 'fail', label: 'Dump/fade pattern' });
+  } else {
+    const vals = [m5, m30, m1].filter(v => v != null);
+    if (vals.length < 2) items.push({ level: 'warn', label: 'TF align n/a' });
+    else {
+      const allPos = vals.every(v => v >= 0);
+      const allNeg = vals.every(v => v < 0);
+      if (allPos) items.push({ level: 'pass', label: 'TF aligned up' });
+      else if (allNeg) items.push({ level: 'warn', label: 'TF aligned down' });
+      else items.push({ level: 'warn', label: 'TF mixed' });
+    }
+  }
+
+  return items;
+}
+
+function checklistHtml(p) {
+  const items = checklistItems(p);
+  return `<div class="checklist">${items.map(i =>
+    `<span class="ck ${i.level}">${esc(i.label)}</span>`
+  ).join('')}</div>
+  <div class="checklist-note">Entry checklist is a compact read of existing metrics. Not advice.</div>`;
 }
 
 // ---------- Loading and refresh ----------
@@ -616,7 +1025,10 @@ async function refreshAll() {
   $('#refresh-all').disabled = true;
   try {
     await Promise.all([loadLaunchFeed(), loadTrendFeed()]);
+    await refreshWatchMissing();
     checkSignals();
+    checkWatchAlerts();
+    renderWatch();
   } finally {
     flashFor.clear(); // flashes show once per refresh, not on every filter change
     nextAt = Date.now() + REFRESH_MS;
@@ -674,8 +1086,10 @@ function initChainSelect() {
     feedOk.launch = 0; feedOk.trend = 0;
     feedErr.launch = ''; feedErr.trend = '';
     flashFor.clear();
+    watchExtra.clear();
     closeDetail();
     for (const k of LISTS) render(k);
+    renderWatch();
     refreshAll();
   });
 }
@@ -851,6 +1265,20 @@ const chip = (cls, text) => `<span class="chip ${cls}">${text}</span>`;
 const pctCell = n => (n == null || isNaN(n)) ? '–' : chip(pctClass(n), pct(n));
 const usdCell = (v, cls = '') => v == null ? '–' : (cls ? chip(cls, usd(v)) : usd(v));
 
+function buyPctCell(p) {
+  const bp = buyPct1h(p);
+  if (bp == null) return '–';
+  const cls = bp >= 55 ? 'up' : bp < 45 ? 'dn' : '';
+  return `<span class="metric ${cls}">${Math.round(bp)}%</span>`;
+}
+
+function volLiqCell(p) {
+  const vl = volLiq(p);
+  if (vl == null) return '–';
+  const hot = vl >= 5 ? 'hot' : '';
+  return `<span class="metric ${hot}" title="1h volume ÷ liquidity">${vl.toFixed(2)}</span>`;
+}
+
 // ---------- Scoring: risk flags, hot score, picks ----------
 
 function risk(p) {
@@ -858,10 +1286,12 @@ function risk(p) {
   const l = p.liquidity?.usd || 0;
   const h1 = p.txns?.h1 || { buys: 0, sells: 0 };
   const total = h1.buys + h1.sells;
+  const vl = volLiq(p);
   if (l < 10000) flags.push('Low liquidity');
   if (ageH(p) < 1) flags.push('Under 1h old');
   if (total > 0 && h1.sells / total > 0.6) flags.push('Sell-heavy last hour');
-  if (l > 0 && (p.volume?.h1 || 0) / l > 5) flags.push('Volume far above liquidity');
+  if (vl != null && vl > 5) flags.push('Volume far above liquidity');
+  if (isDumpFade(p)) flags.push('Dump/fade pattern');
   return flags;
 }
 
@@ -904,6 +1334,7 @@ function hotScore(p) {
 
   const flags = risk(p);
   s -= flags.length * 10;
+  if (isDumpFade(p)) reasons.push('Dump/fade warning');
 
   return { score: Math.max(0, Math.round(s)), reasons, flags };
 }
@@ -924,13 +1355,15 @@ function card({ p, score, reasons, flags }) {
   const flagText = flags.length ? `${flags.length} risk flag${flags.length > 1 ? 's' : ''}` : 'No risk flags';
   return `<article class="card">
     <div class="card-top">
-      <div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small></div></div>
+      <div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small>${dumpBadge(p)}</div></div>
       <span class="chip score" title="Score from the fixed rules">${score}</span>
     </div>
     <ul>${reasons.map(r => `<li>${esc(r)}</li>`).join('') || '<li>No strong signal right now</li>'}</ul>
     <div class="card-stats">
       <span>5m ${pctCell(c5(p))}</span>
       <span>1h ${pctCell(c1h(p))}</span>
+      <span>Buy ${buyPct1h(p) == null ? '–' : Math.round(buyPct1h(p)) + '%'}</span>
+      <span>V/L ${volLiq(p) == null ? '–' : volLiq(p).toFixed(2)}</span>
       <span>Liq ${usd(liq(p))}</span>
       <span>MC ${usd(mcap(p))}</span>
     </div>
@@ -938,7 +1371,8 @@ function card({ p, score, reasons, flags }) {
       <span>${flagText}</span>
       <span><a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>${gmgnLink(addr)}</span>
     </div>
-    <div><button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button></div>
+    <div>${starBtn(addr, p.baseToken.symbol, p.baseToken.name)} <button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button></div>
+    ${tradeLinksHtml(p)}
     ${socialsHtml(p)}
   </article>`;
 }
@@ -964,7 +1398,7 @@ function renderTicker() {
     .sort((a, b) => c5(b) - c5(a))
     .slice(0, 12);
   const items = movers.map(p =>
-    `<span class="tick-item" data-open="${esc(p.baseToken.address)}" role="button" tabindex="0" title="Open ${esc(p.baseToken.symbol)} details"><b>${esc(p.baseToken.symbol)}</b><span class="up">${pct(c5(p))}</span></span>`
+    `<span class="tick-item" data-open="${esc(p.baseToken.address)}" role="button" tabindex="0" title="Open ${esc(p.baseToken.symbol)} details"><b>${esc(p.baseToken.symbol)}</b><span class="up">${pct(c5(p))}</span>${isDumpFade(p) ? '<span class="chip dump">Dump</span>' : ''}</span>`
   ).join('') || '<span class="tick-item">No movers yet…</span>';
   $('#ticker-track').innerHTML = items + items;
 }
@@ -972,7 +1406,7 @@ function renderTicker() {
 // ---------- Token detail panel ----------
 
 function findPair(addr) {
-  return allPairs().find(p => p.baseToken.address === addr) || null;
+  return allPairs().find(p => p.baseToken.address === addr) || watchExtra.get(addr) || null;
 }
 
 function openDetail(addr) {
@@ -992,10 +1426,14 @@ function closeDetail() {
 function renderDetail() {
   const p = openAddr && findPair(openAddr);
   if (!p) {
+    const watched = openAddr && isWatched(openAddr);
     $('#detail-body').innerHTML = `
       <div class="dhead"><h2 id="d-title">Token not in the current list</h2>
-        <button class="ghost dclose" data-close aria-label="Close">✕</button></div>
-      <div class="empty">It may have dropped out of the lists after the last refresh.</div>`;
+        <div class="dhead-actions">
+          ${openAddr ? starBtn(openAddr, '', '') : ''}
+          <button class="ghost dclose" data-close aria-label="Close">✕</button>
+        </div></div>
+      <div class="empty">It may have dropped out of the lists after the last refresh.${watched ? ' It is still on your watchlist.' : ''}</div>`;
     return;
   }
 
@@ -1026,9 +1464,11 @@ function renderDetail() {
   $('#detail-body').innerHTML = `
     <div class="dhead">
       <div class="tok">${img}<div>
-        <h2 id="d-title">${esc(p.baseToken.symbol)} <small>${esc(p.baseToken.name)}</small></h2>
+        <h2 id="d-title">${esc(p.baseToken.symbol)} <small>${esc(p.baseToken.name)}</small>${dumpBadge(p)}</h2>
         <small>${esc(addr)}</small><br>
+        ${starBtn(addr, p.baseToken.symbol, p.baseToken.name)}
         <button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}">Copy contract ${esc(shortAddr(addr))} ⧉</button>
+        ${tradeLinksHtml(p)}
         ${socialsHtml(p)}
       </div></div>
       <button class="ghost dclose" data-close aria-label="Close">✕</button>
@@ -1040,10 +1480,15 @@ function renderDetail() {
       <div class="dstat"><small>Liquidity</small><b>${usd(liq(p))}</b></div>
       <div class="dstat"><small>Age</small><b>${ageLabel(p.pairCreatedAt)}</b></div>
       <div class="dstat"><small>30m change</small><b class="${pctCls(c30(p))}">${pct(c30(p))}</b></div>
+      <div class="dstat"><small>1h buy %</small><b>${buyPct1h(p) == null ? '–' : Math.round(buyPct1h(p)) + '%'}</b></div>
+      <div class="dstat"><small>Vol/Liq (1h)</small><b>${volLiq(p) == null ? '–' : volLiq(p).toFixed(2)}</b></div>
       <div class="dstat"><small>DEX</small><b>${esc(p.dexId || '–')}</b></div>
       <div class="dstat"><small>Risk</small><b>${flags.length ? flags.length + ' flag' + (flags.length > 1 ? 's' : '') : 'Clean'}</b></div>
       <div class="dstat"><small>Pair</small><b>${esc(shortAddr(p.pairAddress || ''))}</b></div>
     </div>
+
+    <div class="dsec">Entry checklist</div>
+    ${checklistHtml(p)}
 
     <div class="dsec">Chart</div>
     <iframe class="dchart" src="${esc(chartSrc)}" title="Price chart" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -1151,20 +1596,24 @@ function row(p, list) {
   const fl = flashFor.get(chain + ':' + addr);
   const mv = p.moved ? 'moved' : '';
   return `<tr class="${mv} ${fl ? 'flash-' + fl : ''}">
-    <td><div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small>
+    <td><div class="tok" data-open="${esc(addr)}" title="Open token details">${img}<div><b class="tlink">${esc(p.baseToken.symbol)}</b><small>${esc(p.baseToken.name)}</small>${dumpBadge(p)}
       <button class="copy" data-addr="${esc(addr)}" data-label="${esc(shortAddr(addr))}" title="Copy full contract address">${esc(shortAddr(addr))} ⧉</button>
+      ${starBtn(addr, p.baseToken.symbol, p.baseToken.name)}
       ${socialsHtml(p)}
     </div></div></td>
     <td>${p.priceUsd ? '$' + Number(p.priceUsd).toPrecision(3) : '–'}</td>
     <td>${pctCell(c5(p))}</td>
     <td>${pctCell(c30(p))}</td>
     <td>${pctCell(c1h(p))}</td>
+    <td>${buyPctCell(p)}</td>
+    <td>${volLiqCell(p)}</td>
     <td>${usdCell(v5(p), volClass(v5(p)))}</td>
     <td>${usdCell(bigVol, volClass(bigVol))}</td>
     <td>${usdCell(mcap(p), mcClass(mcap(p)))}</td>
     <td>${usd(liq(p))}</td>
     <td>${chip(ageClass(ageHours), ageLabel(p.pairCreatedAt))}</td>
     <td><span class="risk ${cls}" title="${esc(flags.join(' · ') || 'No flags')}">${label}</span></td>
+    <td>${tradeLinksHtml(p) || '–'}</td>
     <td><a href="${esc(p.url)}" target="_blank" rel="noopener">Chart</a>${gmgnLink(addr)}</td>
   </tr>`;
 }
@@ -1192,7 +1641,7 @@ function apply(list) {
 function render(list) {
   const rows = apply(list);
   $('#b-' + list).innerHTML = rows.slice(0, 100).map(p => row(p, list)).join('') ||
-    `<tr><td colspan="12" class="empty">No pairs match these filters${state[list].length ? '' : ' (no data for ' + esc(CHAINS[chain].label) + ' yet)'}.</td></tr>`;
+    `<tr><td colspan="15" class="empty">No pairs match these filters${state[list].length ? '' : ' (no data for ' + esc(CHAINS[chain].label) + ' yet)'}.</td></tr>`;
   $('#c-' + list).textContent = `${rows.length} of ${state[list].length} shown`;
   updateFilterCount(list);
   renderPicks();
@@ -1223,10 +1672,17 @@ async function copyText(text) {
   }
 }
 
-// One listener for copy buttons, token links and the close button
+// One listener for copy buttons, watch stars, token links and the close button
 document.addEventListener('click', async e => {
   if (e.target.closest('[data-close]')) { closeDetail(); return; }
   if (e.target.id === 'detail') { closeDetail(); return; } // click on the dark backdrop
+  const star = e.target.closest('button.star[data-watch]');
+  if (star) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWatch(star.dataset.watch, star.dataset.sym, star.dataset.name);
+    return;
+  }
   const copyBtn = e.target.closest('button.copy');
   if (copyBtn) {
     const ok = await copyText(copyBtn.dataset.addr);
@@ -1274,6 +1730,7 @@ $('#refresh-all').addEventListener('click', refreshAll);
 initTheme();
 initMono();
 initSignals();
+initWatch();
 
 // The countdown timer starts before the first load, so the page stays live even if a fetch is slow.
 setInterval(tick, 250);
@@ -1288,6 +1745,7 @@ init().catch(e => {
   console.error('Page load failed:', e);
   $('#global-status').textContent = 'Error loading data. Please try refresh.';
 });
+
 </script>
 </body>
 </html>
