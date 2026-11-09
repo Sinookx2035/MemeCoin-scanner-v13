@@ -12,7 +12,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-a
 header{padding:20px 16px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 h1{font-size:20px;margin:0;background:linear-gradient(90deg,#ff4fa3,#ff8a3d,#ffd23f,#2fe6a6,#3fd6ff,#a66bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 h3{font-size:14px;margin:0}
-main{padding:16px;display:grid;gap:20px;max-width:1800px;margin:0 auto}
+main{padding:16px 16px 28px;display:grid;gap:20px;max-width:1800px;margin:0 auto}
 section{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
 .sec-head{padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
 .sec-head h2{font-size:16px;margin:0}
@@ -38,6 +38,23 @@ button.star:hover{border-color:var(--acc);color:var(--acc)}
 .preset-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;width:100%;padding-top:8px;border-top:1px dashed var(--line)}
 .preset-bar label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px;min-width:180px}
 .meta{padding:8px 16px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.scan-help{padding:12px 16px 16px;border-bottom:1px solid var(--line);background:rgba(127,127,127,.04)}
+.scan-help-head{margin-bottom:10px}
+.scan-help-head h3{margin:0 0 2px;font-size:14px}
+.scan-help-head p{margin:0;color:var(--muted);font-size:12px}
+.scan-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.scan-cols h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.scan-cols ul{margin:0;padding-left:16px;font-size:12px;color:var(--text)}
+.scan-cols li{margin:3px 0}
+.scan-cols .skip{color:var(--bad)}
+.scan-note{margin-top:10px;font-size:12px;color:var(--muted)}
+.scan-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.scan-actions button{font-size:12px;padding:5px 9px}
+.builtin-opt{font-weight:600}
+.chk-row{display:flex;align-items:center;gap:8px;min-width:150px;padding-bottom:2px}
+.chk-row input{width:auto}
+.chk-row span{font-size:12px;color:var(--text)}
+
 
 /* Layout: three lanes side by side on very wide screens, stacked otherwise.
    In columns mode each lane scrolls sideways, so no token info is cut off. */
@@ -175,7 +192,6 @@ a{color:var(--acc)}
 select#chain-select{padding:6px 8px}
 .bar{height:4px;width:160px;background:var(--line);border-radius:4px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff4fa3,#ffd23f,#2fe6a6,#3fd6ff)}
-footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;margin:0 auto}
 
 /* Token detail panel */
 .detail{position:fixed;inset:0;background:var(--shade);display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow:auto;z-index:50}
@@ -297,6 +313,50 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
         <p>Ranked by the rules below, not by any prediction. Not investment advice.</p>
       </div>
     </div>
+    <div class="scan-help" id="scan-help">
+      <div class="scan-help-head">
+        <h3>Scan checklist</h3>
+        <p>Encode a profit-spotting filter as practical defaults. This is a filter, not a prediction, and not advice.</p>
+      </div>
+      <div class="scan-cols">
+        <div>
+          <h4>Look for</h4>
+          <ul>
+            <li>Liquidity floor that can survive ($10k–$25k+ depending on lane)</li>
+            <li>Buy% ahead of sells over the last hour</li>
+            <li>V/L (1h vol ÷ liq) not extreme</li>
+            <li>Age that fits the lane (not brand-new for survivable)</li>
+            <li>No dump/fade badge</li>
+            <li>Detail entry checklist mostly pass / few warns</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Hard skips</h4>
+          <ul class="skip">
+            <li>Sell-heavy after a green pump</li>
+            <li>Liquidity draining while price looks strong</li>
+            <li>Boosts-only hype with thin real activity</li>
+            <li>Dump/fade: 5m green while 30m/1h roll over</li>
+            <li>Brand-new + tiny liq unless you accept lottery risk</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Built-in presets</h4>
+          <ul>
+            <li><b>Scan: Survivable</b> on Graduated / Trending / New pairs</li>
+            <li><b>Scan: Early lottery</b> on New pairs (high risk)</li>
+          </ul>
+          <p class="scan-note">One click applies lane filters. Built-ins cannot be deleted. Also available in each Filters → presets list.</p>
+          <div class="scan-actions">
+            <button type="button" class="ghost" data-scan-apply="grad|Scan: Survivable" title="Apply to Graduated">Graduated · Survivable</button>
+            <button type="button" class="ghost" data-scan-apply="trend|Scan: Survivable" title="Apply to Trending">Trending · Survivable</button>
+            <button type="button" class="ghost" data-scan-apply="launch|Scan: Survivable" title="Apply to New pairs">New pairs · Survivable</button>
+            <button type="button" class="ghost" data-scan-apply="launch|Scan: Early lottery" title="High risk early filter on New pairs">New pairs · Early lottery</button>
+          </div>
+        </div>
+      </div>
+      <p class="scan-note">Not financial advice. Always verify contract, liquidity, and chart before trading.</p>
+    </div>
     <div class="sub">
       <h3>🔥 Hot now</h3>
       <p>Liquidity ≥ $10k. Scored on 5m and 30m gains, a 5m volume spike, and buy pressure over the last hour, minus 10 points per risk flag.</p>
@@ -329,7 +389,7 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
 
     <section id="sec-grad">
       <div class="sec-head">
-        <div><h2>Graduated</h2><p>Tokens on a DEX with at least $20k liquidity (approximate, see footer).</p></div>
+        <div><h2>Graduated</h2><p>Tokens on a DEX with at least $20k liquidity (approximate).</p></div>
         <div class="sec-tools">
           <button type="button" class="ghost toggle" data-target="f-grad" aria-expanded="true">Filters <span class="chev">▴</span> <span class="cnt"></span></button>
           <div class="status" id="st-grad"></div>
@@ -367,9 +427,6 @@ footer{padding:0 16px 24px;color:var(--muted);font-size:12px;max-width:1800px;ma
   <div class="dpanel" id="detail-body"></div>
 </div>
 
-<footer>
-  Data from DexScreener public endpoints. Website and social links come from each token's DexScreener profile, which the token's creator submits, so they are not verified. 5m and 1h changes come from DexScreener. 30m change is calculated from this page's own snapshots, so it shows "–" until about 30 minutes after the page opens. DexScreener does not provide 30m volume. Buy and sell counts are per time window and refresh with the page every 50 seconds; they are not a live trade-by-trade feed. The chart in the detail panel is DexScreener's embedded chart; if it stays blank, use the Chart link. Graduated is an approximation: it lists tokens on the DEX pools named in GRAD.dexIds with at least GRAD.minLiq liquidity. It does not confirm a bonding-curve graduation, so check the source before relying on it. Hot and picks are ranked by fixed rules and do not predict price. Risk flags: liquidity under $10k, under 1h old, sell-heavy last hour, 1h volume more than 5x liquidity, or a dump/fade pattern (strong 5m green while 30m/1h roll over). Entry checklist and watchlist alerts are heuristics only, not advice. Trade links open third-party sites (Jupiter, Photon, BullX Neo, Axiom) in a new tab; they are convenience links, not endorsements. Watchlist and alert settings stay in this browser via localStorage. Not financial advice; always verify before trading.
-</footer>
 
 <script>
 
@@ -454,6 +511,8 @@ const SECTIONS = {
     ranges: [
       { key: 'age',  label: 'Age (hours)',    step: '0.5',  get: ageH },
       { key: 'liq',  label: 'Liquidity ($)',  step: '1000', get: liq },
+      { key: 'buy',  label: '1h buy %',       step: '1',    get: buyPct1h },
+      { key: 'vl',   label: 'Vol/Liq (1h)',   step: '0.1',  get: volLiq },
       { key: 'c5',   label: '5m change (%)',  step: 'any',  get: c5 },
       { key: 'c30',  label: '30m change (%)', step: 'any',  get: c30 },
       { key: 'v5',   label: '5m volume ($)',  step: '100',  get: v5 },
@@ -476,6 +535,8 @@ const SECTIONS = {
     ranges: [
       { key: 'age',  label: 'Age (hours)',    step: '0.5',  get: ageH },
       { key: 'liq',  label: 'Liquidity ($)',  step: '1000', get: liq },
+      { key: 'buy',  label: '1h buy %',       step: '1',    get: buyPct1h },
+      { key: 'vl',   label: 'Vol/Liq (1h)',   step: '0.1',  get: volLiq },
       { key: 'c5',   label: '5m change (%)',  step: 'any',  get: c5 },
       { key: 'c30',  label: '30m change (%)', step: 'any',  get: c30 },
       { key: 'v5',   label: '5m volume ($)',  step: '100',  get: v5 },
@@ -498,6 +559,8 @@ const SECTIONS = {
       { key: 'c5',   label: '5m change (%)',  step: 'any',  get: c5 },
       { key: 'c30',  label: '30m change (%)', step: 'any',  get: c30 },
       { key: 'c1h',  label: '1h change (%)',  step: 'any',  get: c1h },
+      { key: 'buy',  label: '1h buy %',       step: '1',    get: buyPct1h },
+      { key: 'vl',   label: 'Vol/Liq (1h)',   step: '0.1',  get: volLiq },
       { key: 'v5',   label: '5m volume ($)',  step: '100',  get: v5 },
       { key: 'v24h', label: '24h volume ($)', step: '1000', get: v24h },
       { key: 'liq',  label: 'Liquidity ($)',  step: '1000', get: liq },
@@ -1130,9 +1193,10 @@ function buildForm(id) {
   form.innerHTML = `
     <label>Search<input name="q" placeholder="Symbol, name or address"></label>
     ${ranges}
+    <label class="chk-row"><input name="no_dump" type="checkbox" value="1"><span>Hide dump/fade</span></label>
     <label>Sort by<select name="sort">${s.sorts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
     <div class="preset-bar">
-      <label>Saved presets<select name="preset_pick"></select></label>
+      <label>Presets<select name="preset_pick"></select></label>
       <button type="button" class="ghost" data-act="save">Save as preset</button>
       <button type="button" class="ghost" data-act="delete">Delete preset</button>
       <button type="button" class="ghost" data-act="reset">Reset filters</button>
@@ -1141,10 +1205,15 @@ function buildForm(id) {
 }
 
 function currentValues(id) {
+  const form = document.getElementById('f-' + id);
   const vals = {};
-  for (const [k, v] of new FormData(document.getElementById('f-' + id))) {
+  for (const [k, v] of new FormData(form)) {
     if (k !== 'preset_pick') vals[k] = v;
   }
+  // Unchecked checkboxes are omitted from FormData; keep an explicit off value for presets.
+  const dump = form.querySelector('[name=no_dump]');
+  if (dump && !dump.checked) delete vals.no_dump;
+  if (dump && dump.checked) vals.no_dump = '1';
   return vals;
 }
 
@@ -1155,6 +1224,7 @@ function readFilters(id) {
   return {
     q: (f.q || '').trim().toLowerCase(),
     sort: f.sort,
+    noDump: f.no_dump === '1',
     ranges: s.ranges.map(r => ({ ...r, min: num(f[r.key + '_min']), max: num(f[r.key + '_max'])}))
   };
 }
@@ -1167,7 +1237,31 @@ function updateFilterCount(id) {
   if (el) el.textContent = n ? `· ${n} active` : '';
 }
 
-// ---------- Presets (localStorage, per list) ----------
+// ---------- Presets (built-in scan presets + localStorage user presets) ----------
+
+// Built-in scan presets encode practical defaults. They cannot be deleted.
+const BUILTIN_PRESETS = {
+  launch: {
+    'Scan: Survivable': {
+      liq_min: '10000', age_min: '1', buy_min: '55', vl_max: '5', no_dump: '1', sort: 'liq'
+    },
+    'Scan: Early lottery': {
+      // High risk: fresh pairs with a thin floor and some activity.
+      liq_min: '5000', age_max: '2', buy_min: '50', tx_min: '15', vl_max: '8', sort: 'age'
+    }
+  },
+  grad: {
+    'Scan: Survivable': {
+      liq_min: '25000', age_min: '1', buy_min: '55', vl_max: '5', no_dump: '1', sort: 'liq'
+    }
+  },
+  trend: {
+    'Scan: Survivable': {
+      // Trending is boost-based; still require a real liq floor and buy pressure.
+      liq_min: '25000', buy_min: '55', vl_max: '5', c5_min: '0', no_dump: '1', sort: 'liq'
+    }
+  }
+};
 
 const presetKey = id => 'solanaScanner.presets.' + id;
 
@@ -1181,18 +1275,41 @@ function storePresets(id, presets) {
   catch (e) { /* storage blocked: presets just won't persist */ }
 }
 
+function isBuiltinPreset(id, name) {
+  return !!(BUILTIN_PRESETS[id] && Object.prototype.hasOwnProperty.call(BUILTIN_PRESETS[id], name));
+}
+
+function resolvePreset(id, name) {
+  if (isBuiltinPreset(id, name)) return BUILTIN_PRESETS[id][name];
+  return loadPresets(id)[name] || null;
+}
+
 function refreshPresetList(id, selectName = '') {
   const sel = document.querySelector(`#f-${id} [name=preset_pick]`);
-  const names = Object.keys(loadPresets(id));
-  sel.innerHTML = '<option value="">— choose —</option>' +
-    names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-  sel.value = selectName && names.includes(selectName) ? selectName : '';
+  const builtins = Object.keys(BUILTIN_PRESETS[id] || {});
+  const names = Object.keys(loadPresets(id)).filter(n => !isBuiltinPreset(id, n));
+  let html = '<option value="">— choose —</option>';
+  if (builtins.length) {
+    html += `<optgroup label="Built-in scan">${builtins.map(n =>
+      `<option class="builtin-opt" value="${esc(n)}">${esc(n)}</option>`).join('')}</optgroup>`;
+  }
+  if (names.length) {
+    html += `<optgroup label="Saved">${names.map(n =>
+      `<option value="${esc(n)}">${esc(n)}</option>`).join('')}</optgroup>`;
+  }
+  sel.innerHTML = html;
+  const all = [...builtins, ...names];
+  sel.value = selectName && all.includes(selectName) ? selectName : '';
 }
 
 function applyValues(id, vals) {
   const form = document.getElementById('f-' + id);
   form.querySelectorAll('[name]').forEach(el => {
     if (el.name === 'preset_pick') return;
+    if (el.type === 'checkbox') {
+      el.checked = vals[el.name] === '1' || vals[el.name] === true || vals[el.name] === 'on';
+      return;
+    }
     el.value = vals[el.name] ?? '';
   });
 }
@@ -1200,6 +1317,10 @@ function applyValues(id, vals) {
 function savePreset(id) {
   const name = (prompt('Name this preset:') || '').trim();
   if (!name) return;
+  if (isBuiltinPreset(id, name) || name.startsWith('Scan:')) {
+    alert('Built-in scan preset names are reserved. Pick another name.');
+    return;
+  }
   const presets = loadPresets(id);
   presets[name] = currentValues(id);
   storePresets(id, presets);
@@ -1210,6 +1331,10 @@ function savePreset(id) {
 function deletePreset(id) {
   const sel = document.querySelector(`#f-${id} [name=preset_pick]`);
   if (!sel.value) return;
+  if (isBuiltinPreset(id, sel.value)) {
+    alert('Built-in scan presets cannot be deleted.');
+    return;
+  }
   const presets = loadPresets(id);
   delete presets[sel.value];
   storePresets(id, presets);
@@ -1220,9 +1345,20 @@ function deletePreset(id) {
 function loadPreset(id) {
   const name = document.querySelector(`#f-${id} [name=preset_pick]`).value;
   if (!name) return;
-  const presets = loadPresets(id);
-  if (presets[name]) applyValues(id, presets[name]);
+  const vals = resolvePreset(id, name);
+  if (vals) applyValues(id, vals);
   render(id);
+}
+
+function applyBuiltinScan(listId, name) {
+  const vals = resolvePreset(listId, name);
+  if (!vals) return;
+  setFiltersOpen(listId, true);
+  applyValues(listId, vals);
+  refreshPresetList(listId, name);
+  render(listId);
+  const sec = document.getElementById('sec-' + listId);
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---------- Colour tiers ----------
@@ -1625,6 +1761,7 @@ function apply(list) {
   const sort = SECTIONS[list].sorts.find(x => x[0] === f.sort) || SECTIONS[list].sorts[0];
   const out = state[list].filter(p => {
     if (f.q && !`${p.baseToken.symbol} ${p.baseToken.name} ${p.baseToken.address}`.toLowerCase().includes(f.q)) return false;
+    if (f.noDump && isDumpFade(p)) return false;
     return f.ranges.every(r => {
       const v = r.get(p);
       if (v == null) return r.min == null && r.max == null;
@@ -1713,7 +1850,13 @@ for (const id of LISTS) {
     const act = e.target.dataset.act;
     if (act === 'save') savePreset(id);
     if (act === 'delete') deletePreset(id);
-    if (act === 'reset') { form.reset(); form.querySelector('[name=preset_pick]').value = ''; render(id); }
+    if (act === 'reset') {
+      form.reset();
+      const dump = form.querySelector('[name=no_dump]');
+      if (dump) dump.checked = false;
+      form.querySelector('[name=preset_pick]').value = '';
+      render(id);
+    }
   });
   document.querySelector(`.toggle[data-target="f-${id}"]`).addEventListener('click', () => {
     const open = document.getElementById('f-' + id).classList.contains('collapsed');
@@ -1723,6 +1866,13 @@ for (const id of LISTS) {
 
 // Filters always start folded, on every screen size. They only open when the user clicks Filters.
 for (const id of LISTS) setFiltersOpen(id, false);
+
+document.getElementById('scan-help').addEventListener('click', e => {
+  const btn = e.target.closest('[data-scan-apply]');
+  if (!btn) return;
+  const [listId, name] = btn.dataset.scanApply.split('|');
+  if (listId && name) applyBuiltinScan(listId, name);
+});
 
 initChainSelect();
 initLayout();
